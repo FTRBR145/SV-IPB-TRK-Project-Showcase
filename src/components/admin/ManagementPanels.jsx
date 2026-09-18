@@ -664,8 +664,8 @@ export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
       setFormError('Masukkan alamat email moderator yang valid.');
       return;
     }
-    if (normalized.password.length < 12) {
-      setFormError('Password moderator minimal 12 karakter.');
+    if (normalized.password.length < 8) {
+      setFormError('Password moderator minimal 8 karakter.');
       return;
     }
     if (normalized.password !== formData.confirmPassword) {
@@ -798,11 +798,11 @@ export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
               id="moderator-password"
               type={showPassword ? 'text' : 'password'}
               disabled={isSubmitting}
-              minLength={12}
+              minLength={8}
               maxLength={72}
               value={formData.password}
               onChange={(event) => { setFormData((previous) => ({ ...previous, password: event.target.value })); setFormError(''); }}
-              placeholder="Minimal 12 karakter"
+              placeholder="Minimal 8 karakter"
               required
               autoComplete="new-password"
               aria-describedby="moderator-password-help"
@@ -819,7 +819,7 @@ export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
               {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
             </button>
           </span>
-          <span id="moderator-password-help" className="mt-1 block font-normal text-slate-500">Gunakan minimal 12 karakter. Password disimpan dalam bentuk hash.</span>
+          <span id="moderator-password-help" className="mt-1 block font-normal text-slate-500">Gunakan minimal 8 karakter. Password disimpan dalam bentuk hash.</span>
         </label>
         <label className="block text-xs font-bold text-slate-700" htmlFor="moderator-confirm-password">
           Konfirmasi password *
@@ -827,7 +827,7 @@ export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
             id="moderator-confirm-password"
             type={showPassword ? 'text' : 'password'}
             disabled={isSubmitting}
-            minLength={12}
+            minLength={8}
             maxLength={72}
             value={formData.confirmPassword}
             onChange={(event) => { setFormData((previous) => ({ ...previous, confirmPassword: event.target.value })); setFormError(''); }}
