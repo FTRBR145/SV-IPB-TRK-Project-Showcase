@@ -82,9 +82,9 @@ export default function ProfilePage() {
           <div><h2 id="security-heading" className="text-lg font-semibold">Keamanan</h2><p className="mt-2 text-sm leading-relaxed text-slate-600">Gunakan password yang unik dan tidak dibagikan kepada orang lain.</p></div>
           <ValidatedForm onSubmit={updatePassword} className="min-w-0 space-y-5">
             <PasswordField id="current-password" label="Password saat ini" value={passwords.currentPassword} onChange={event => setPasswords({...passwords,currentPassword:event.target.value})} disabled={!!busy} autoComplete="current-password" />
-            <PasswordField id="new-password" label="Password baru" value={passwords.newPassword} onChange={event => setPasswords({...passwords,newPassword:event.target.value})} disabled={!!busy} autoComplete="new-password" minLength={12} />
-            <p className="text-xs text-slate-600">Minimal 12 karakter. Gunakan gabungan kata yang sulit ditebak.</p>
-            <PasswordField id="confirm-password" label="Konfirmasi password baru" value={passwords.confirmation} onChange={event => setPasswords({...passwords,confirmation:event.target.value})} disabled={!!busy} autoComplete="new-password" minLength={12} />
+            <PasswordField id="new-password" label="Password baru" value={passwords.newPassword} onChange={event => setPasswords({...passwords,newPassword:event.target.value})} disabled={!!busy} autoComplete="new-password" minLength={8} />
+            <p className="text-xs text-slate-600">Minimal 8 karakter. Gunakan gabungan kata yang sulit ditebak.</p>
+            <PasswordField id="confirm-password" label="Konfirmasi password baru" value={passwords.confirmation} onChange={event => setPasswords({...passwords,confirmation:event.target.value})} disabled={!!busy} autoComplete="new-password" minLength={8} />
             {passwordError && <p role="alert" className="text-sm text-rose-700">{passwordError}</p>}
             <p className="text-xs leading-relaxed text-slate-600">Setelah password diubah, Anda akan keluar dari semua sesi dan perlu masuk kembali.</p>
             <button disabled={!!busy} className={buttonClass}>{busy === 'password' ? 'Mengubah...' : 'Ubah Password'}</button>

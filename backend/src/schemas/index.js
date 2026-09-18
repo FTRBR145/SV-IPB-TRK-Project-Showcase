@@ -5,7 +5,7 @@ const optionalText = (max) => z.string().trim().max(max).optional();
 export const profileSchema = z.object({ name: z.string().trim().min(2).max(120) }).strict();
 export const passwordSchema = z.object({
   currentPassword: z.string().min(1).max(128),
-  newPassword: z.string().min(12).max(72).refine(value => Buffer.byteLength(value, 'utf8') <= 72, 'Password maksimal 72 byte.')
+  newPassword: z.string().min(8).max(72).refine(value => Buffer.byteLength(value, 'utf8') <= 72, 'Password maksimal 72 byte.')
 }).strict();
 
 export const loginSchema = z.object({
