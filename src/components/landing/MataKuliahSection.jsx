@@ -61,7 +61,7 @@ export default function MataKuliahSection({ onSelectCourse }) {
 
           className="font-heading text-2xl sm:text-3xl font-semibold text-slate-800 mb-8"
         >
-          Mata Kuliah Unggulan TRK
+          Mata Kuliah berbasis Project
         </h2>
 
         <div className="relative group/slider">
@@ -78,7 +78,7 @@ export default function MataKuliahSection({ onSelectCourse }) {
             ref={scrollRef}
             tabIndex={0}
             role="region"
-            aria-label="Daftar mata kuliah unggulan TRK"
+            aria-label="Daftar mata kuliah berbasis project"
           >
             {baseCourses.map((c) => (
               <button

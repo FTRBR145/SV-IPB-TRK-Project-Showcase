@@ -60,7 +60,7 @@ export default function HeroSection({ onOpenUpload, onNavigateToStudent }) {
       </div>
       <div className="landing-container hero-layout">
         <div className="hero-copy">
-          <h1>TRK Student Project Showcase</h1>
+          <h1>Teknologi Rekayasa Komputer<br />Project Showcase</h1>
           <p>Platform showcase video projek akhir dan praktikum sistem tertanam mahasiswa Teknologi Rekayasa Komputer (TRK) Sekolah Vokasi IPB University. Menampilkan inovasi IoT, mikrokontroler, jaringan komputer, dan cloud.</p>
           <div className="hero-actions">
             <button type="button" className="landing-primary" onClick={onNavigateToStudent}>
