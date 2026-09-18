@@ -46,12 +46,16 @@ export default function ProjectShowcase({
         <div
           className="flex min-w-0 flex-col gap-4 mb-8"
         >
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div
+            className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-1.5"
+            role="group"
+            aria-label="Filter berdasarkan semester"
+          >
             {semesters.map((sem) => (
               <button
                 key={sem}
                 aria-pressed={selectedSemester === sem}
-                className={`min-h-11 px-3.5 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
+                className={`min-h-11 min-w-0 w-full px-1.5 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 sm:w-auto sm:px-3.5 ${
                   selectedSemester === sem
                     ? 'bg-slate-900 text-white'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
