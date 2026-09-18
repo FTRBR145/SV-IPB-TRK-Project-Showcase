@@ -2,6 +2,7 @@ import ValidatedForm from '../common/ValidatedForm';
 import StudentEnrollment from './StudentEnrollment';
 import React, { useEffect, useState, useMemo } from 'react';
 import {
+  Check,
   Eye,
   Pencil,
   Plus,
@@ -16,6 +17,26 @@ import { DialogClose } from '../ui/dialog';
 import { courseLabel } from '../../utils/courseLabel';
 
 const MAX_BULK_SELECTION = 100;
+
+function SelectionCheckbox({ checked, disabled, onChange, label }) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onChange}
+      className={`inline-flex h-6 w-6 items-center justify-center rounded-md border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
+        checked
+          ? 'border-sky-600 bg-sky-600 text-white shadow-sm'
+          : 'border-slate-400 bg-white text-transparent hover:border-sky-600 hover:bg-sky-50'
+      }`}
+    >
+      <Check size={16} strokeWidth={3} aria-hidden="true" />
+    </button>
+  );
+}
 
 function BulkSelectionBar({ items, selectedIds, setSelectedIds, isDeleting, onDelete, noun, deleteNote }) {
   const itemIds = items.map((item) => item.id);
@@ -101,16 +122,14 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
       className: 'text-center',
       weight: 0.6,
       render: (row) => (
-        <label className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl hover:bg-slate-100">
-          <span className="sr-only">Pilih projek {row.title}</span>
-          <input
-            type="checkbox"
+        <div className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl hover:bg-slate-100">
+          <SelectionCheckbox
             checked={selectedIds.has(row.id)}
             disabled={isDeleting || (!selectedIds.has(row.id) && selectedIds.size >= MAX_BULK_SELECTION)}
             onChange={() => toggleProject(row.id)}
-            className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-600"
+            label={`${selectedIds.has(row.id) ? 'Batalkan pilihan' : 'Pilih'} projek ${row.title}`}
           />
-        </label>
+        </div>
       )
     },
     {
@@ -381,16 +400,14 @@ export function StudentsPanel({ students, onViewProjects, onUpdate, onDelete, on
       className: 'text-center',
       weight: 0.6,
       render: (row) => (
-        <label className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl hover:bg-slate-100">
-          <span className="sr-only">Pilih akun mahasiswa {row.name}</span>
-          <input
-            type="checkbox"
+        <div className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl hover:bg-slate-100">
+          <SelectionCheckbox
             checked={selectedIds.has(row.id)}
             disabled={isDeleting || (!selectedIds.has(row.id) && selectedIds.size >= MAX_BULK_SELECTION)}
             onChange={() => toggleStudent(row.id)}
-            className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-600"
+            label={`${selectedIds.has(row.id) ? 'Batalkan pilihan' : 'Pilih'} akun mahasiswa ${row.name}`}
           />
-        </label>
+        </div>
       )
     },
     {

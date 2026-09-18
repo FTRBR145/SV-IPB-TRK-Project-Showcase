@@ -73,6 +73,12 @@
 .admin-datatable table.dataTable > tbody > tr:hover > td {
   background: var(--ui-canvas);
 }
+.admin-datatable table.dataTable > tbody > tr:has([role="checkbox"][aria-checked="true"]) > td {
+  background: #f0f9ff;
+}
+.admin-datatable table.dataTable > tbody > tr:has([role="checkbox"][aria-checked="true"]):hover > td {
+  background: #e0f2fe;
+}
 .table-cell, .table-cell-value { min-width: 0; max-width: 100%; }
 .table-cell-label { display: none; }
 .table-cell-value > div { max-width: 100%; }
