@@ -48,6 +48,14 @@ export const moderatorSchema = z.object({
   email: z.email().transform((value) => value.toLowerCase())
 });
 
+export const studentSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  nim: z.string().trim().min(3).max(30).regex(/^[a-z0-9-]+$/i).transform(value => value.toUpperCase()),
+  email: z.email().max(160).transform(value => value.toLowerCase()),
+  semester: z.coerce.number().int().min(1).max(14),
+  angkatan: z.string().trim().min(1).max(40)
+});
+
 export const settingsSchema = z.object({
   siteName: z.string().trim().min(3).max(120).optional(),
   academicYear: z.string().trim().min(4).max(20).optional(),

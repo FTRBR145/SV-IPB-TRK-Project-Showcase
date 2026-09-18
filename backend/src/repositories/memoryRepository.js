@@ -69,6 +69,25 @@ export function createMemoryRepository(initialData = createSeedData()) {
       recordActivity(studentActivity(created), 'user', actor);
       return clone(created.map(({passwordHash: _hash,...user}) => user));
     },
+    updateStudent(id, data, actor) {
+      const index = state.users.findIndex(user => user.id === Number(id) && user.role === 'student');
+      if (index < 0) return { error: 'not_found' };
+      const duplicate = state.users.some(user => user.id !== Number(id) && (user.email?.toLowerCase() === data.email.toLowerCase() || String(user.nim || '').toUpperCase() === data.nim.toUpperCase()));
+      if (duplicate) return { error: 'duplicate' };
+      const previous = state.users[index];
+      state.users[index] = { ...previous, ...data };
+      recordActivity(`Akun mahasiswa ${previous.name} (${previous.nim}) diperbarui.`, 'user', actor);
+      const { passwordHash: _hash, ...student } = state.users[index];
+      return clone(student);
+    },
+    deleteStudent(id, actor) {
+      const index = state.users.findIndex(user => user.id === Number(id) && user.role === 'student');
+      if (index < 0) return { error: 'not_found' };
+      const [removed] = state.users.splice(index, 1);
+      recordActivity(`Akun mahasiswa ${removed.name} (${removed.nim}) dihapus.`, 'danger', actor);
+      const { passwordHash: _hash, ...student } = removed;
+      return { student: clone(student) };
+    },
     reset() {
       state = clone(initialData);
     },

@@ -90,6 +90,35 @@ export function createPostgresRepository(pool) {
         return created;
       });
     },
+    updateStudent(id, data, actor) {
+      return transaction(async client => {
+        const studentId = asId(id);
+        await client.query('lock table showcase.users in share row exclusive mode');
+        const existing = unpack((await client.query("select * from showcase.users where id=$1 and data->>'role'='student'", [studentId])).rows[0]);
+        if (!existing) return { error: 'not_found' };
+        const duplicate = (await client.query(
+          "select 1 from showcase.users where id<>$1 and (lower(data->>'email')=$2 or upper(data->>'nim')=$3) limit 1",
+          [studentId, data.email.toLowerCase(), data.nim.toUpperCase()]
+        )).rows[0];
+        if (duplicate) return { error: 'duplicate' };
+        const updated = unpack((await client.query(
+          "update showcase.users set data=data || $2::jsonb where id=$1 and data->>'role'='student' returning id, data - 'passwordHash' as data",
+          [studentId, JSON.stringify(data)]
+        )).rows[0]);
+        await log(client, `Akun mahasiswa ${existing.name} (${existing.nim}) diperbarui.`, 'user', actor);
+        return updated;
+      });
+    },
+    deleteStudent(id, actor) {
+      return transaction(async client => {
+        const studentId = asId(id);
+        const existing = unpack((await client.query("select * from showcase.users where id=$1 and data->>'role'='student'", [studentId])).rows[0]);
+        if (!existing) return { error: 'not_found' };
+        const removed = unpack((await client.query("delete from showcase.users where id=$1 and data->>'role'='student' returning id, data - 'passwordHash' as data", [studentId])).rows[0]);
+        await log(client, `Akun mahasiswa ${existing.name} (${existing.nim}) dihapus.`, 'danger', actor);
+        return { student: removed };
+      });
+    },
     async health() { await query('select 1 from showcase.settings where id=1'); },
     async close() { await pool.end(); },
     async seed(seed) {

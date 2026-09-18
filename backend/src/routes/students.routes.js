@@ -1,19 +1,13 @@
 import { Router } from 'express';
-import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'node:crypto';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import { studentSchema } from '../schemas/index.js';
 import { ApiError, sendData } from '../utils/http.js';
 
 const router = Router();
 router.use(authenticate, authorize('admin'));
-const studentSchema = z.object({
-  name: z.string().trim().min(2).max(120),
-  nim: z.string().trim().min(3).max(30).regex(/^[a-z0-9-]+$/i).transform(value => value.toUpperCase()),
-  email: z.string().trim().pipe(z.email().max(160)).transform(value => value.toLowerCase()),
-  semester: z.coerce.number().int().min(1).max(14),
-  angkatan: z.string().trim().min(1).max(40)
-});
 
 async function inspect(repository, input) {
   if (!Array.isArray(input) || input.length < 1 || input.length > 500) {
@@ -76,6 +70,19 @@ router.post('/', async (req, res) => {
   }
   const students = await repository.createStudents(users, req.user);
   sendData(res, { students, credentials }, 201);
+});
+
+router.patch('/:id', validate(studentSchema), async (req, res) => {
+  const student = await req.app.locals.repository.updateStudent(req.params.id, req.body, req.user);
+  if (student?.error === 'not_found') throw new ApiError(404, 'STUDENT_NOT_FOUND', 'Akun mahasiswa tidak ditemukan.');
+  if (student?.error === 'duplicate') throw new ApiError(409, 'STUDENT_EXISTS', 'NIM atau email sudah terdaftar pada akun lain.');
+  sendData(res, student);
+});
+
+router.delete('/:id', async (req, res) => {
+  const result = await req.app.locals.repository.deleteStudent(req.params.id, req.user);
+  if (result.error === 'not_found') throw new ApiError(404, 'STUDENT_NOT_FOUND', 'Akun mahasiswa tidak ditemukan.');
+  sendData(res, result.student);
 });
 
 export default router;

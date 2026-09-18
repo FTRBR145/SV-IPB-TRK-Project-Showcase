@@ -334,6 +334,30 @@ export function AppProvider({ children }) {
     }
   };
 
+  const updateStudent = async (studentId, updates) => {
+    try {
+      const student = await apiRequest(`/students/${studentId}`, { method: 'PATCH', body: updates });
+      setStudentAccounts((previous) => previous.map((item) => item.id === student.id ? student : item));
+      await refreshActivityLogs();
+      showToast('Data mahasiswa berhasil diperbarui.');
+      return student;
+    } catch (error) {
+      return reportApiError(error, 'Data mahasiswa gagal diperbarui.');
+    }
+  };
+
+  const deleteStudent = async (studentId) => {
+    try {
+      await apiRequest(`/students/${studentId}`, { method: 'DELETE' });
+      setStudentAccounts((previous) => previous.filter((student) => student.id !== studentId));
+      await refreshActivityLogs();
+      showToast('Akun mahasiswa berhasil dihapus.', 'info');
+      return true;
+    } catch (error) {
+      return reportApiError(error, 'Akun mahasiswa gagal dihapus.');
+    }
+  };
+
   const addCourse = async (courseName) => {
     try {
       const result = await apiRequest('/courses', { method: 'POST', body: { name: courseName } });
@@ -424,6 +448,8 @@ export function AppProvider({ children }) {
       addModerator,
       toggleModerator,
       deleteModerator,
+      updateStudent,
+      deleteStudent,
       addCourse,
       deleteCourse,
       updateAdminSettings,

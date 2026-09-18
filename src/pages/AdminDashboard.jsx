@@ -58,6 +58,8 @@ export default function AdminDashboard() {
     addModerator,
     toggleModerator,
     deleteModerator,
+    updateStudent,
+    deleteStudent,
     addCourse,
     deleteCourse,
     updateAdminSettings,
@@ -111,7 +113,7 @@ export default function AdminDashboard() {
       case 'moderators':
         return <ModeratorsPanel moderators={moderators} onAdd={addModerator} onToggle={toggleModerator} onDelete={deleteModerator} />;
       case 'students':
-        return <StudentsPanel students={students} onViewProjects={viewStudentProjects} />;
+        return <StudentsPanel students={students} onViewProjects={viewStudentProjects} onUpdate={updateStudent} onDelete={deleteStudent} />;
       case 'courses':
         return (
           <TaxonomyPanel

@@ -197,7 +197,51 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
 // ============================================================================
 // 2. STUDENTS PANEL (WITH DATATABLE)
 // ============================================================================
-export function StudentsPanel({ students, onViewProjects }) {
+export function StudentsPanel({ students, onViewProjects, onUpdate, onDelete }) {
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [formData, setFormData] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const openEditor = (student) => {
+    setEditingStudent(student);
+    setFormData({
+      name: student.name || '',
+      nim: student.nim || '',
+      email: student.email || '',
+      semester: student.semester || 1,
+      angkatan: student.angkatan || ''
+    });
+    setFormError('');
+  };
+
+  const closeEditor = () => {
+    if (!isSubmitting) {
+      setEditingStudent(null);
+      setFormData(null);
+      setFormError('');
+    }
+  };
+
+  const submitEdit = async (event) => {
+    event.preventDefault();
+    if (!editingStudent || isSubmitting) return;
+    setIsSubmitting(true);
+    setFormError('');
+    try {
+      const updated = await onUpdate(editingStudent.id, formData);
+      if (updated) {
+        setEditingStudent(null);
+        setFormData(null);
+        setFormError('');
+      }
+    } catch (error) {
+      setFormError(error.message || 'Data mahasiswa belum dapat diperbarui.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const columns = [
     {
       key: 'nim',
@@ -254,15 +298,37 @@ export function StudentsPanel({ students, onViewProjects }) {
       headerClassName: 'text-center',
       className: 'text-center',
       render: (row) => (
-        <button
-          type="button"
-          onClick={() => onViewProjects(row.nim)}
-          className="inline-flex min-h-11 items-center gap-1.5 px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
-          aria-label={`Lihat seluruh projek karya ${row.name}`}
-        >
-          <Eye size={15} />
-          <span>Lihat Projek</span>
-        </button>
+        <div className="flex items-center justify-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => onViewProjects(row.nim)}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-slate-900 p-2.5 text-white shadow-2xs transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
+            title="Lihat projek mahasiswa"
+            aria-label={`Lihat seluruh projek karya ${row.name}`}
+          >
+            <Eye size={15} />
+          </button>
+          <button
+            type="button"
+            onClick={() => openEditor(row)}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-amber-50 p-2.5 text-amber-700 shadow-2xs transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+            title="Edit akun mahasiswa"
+            aria-label={`Edit akun mahasiswa ${row.name}`}
+          >
+            <Pencil size={15} />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm(`Hapus akun mahasiswa ${row.name}? Data projek mahasiswa tetap dipertahankan.`)) onDelete(row.id);
+            }}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-rose-50 p-2.5 text-rose-700 shadow-2xs transition-colors hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
+            title="Hapus akun mahasiswa"
+            aria-label={`Hapus akun mahasiswa ${row.name}`}
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
       )
     }
   ];
@@ -293,6 +359,48 @@ export function StudentsPanel({ students, onViewProjects }) {
         exportFileName="direktori-mahasiswa-trk.csv"
         emptyMessage="Mahasiswa tidak ditemukan."
       />
+
+      <ModalShell isOpen={Boolean(editingStudent)} onClose={closeEditor} ariaLabel="Edit akun mahasiswa" panelClassName="max-w-lg max-h-[90dvh] overflow-y-auto rounded-2xl">
+        <DialogClose disabled={isSubmitting} aria-label="Tutup form edit mahasiswa" className="absolute right-3 top-3 flex min-h-11 min-w-11 items-center justify-center rounded-xl hover:bg-slate-100">
+          <X size={18} />
+        </DialogClose>
+        <div className="p-6 sm:p-8">
+          <div className="mb-6 pr-10">
+            <h2 className="font-heading text-lg font-bold text-slate-900">Edit akun mahasiswa</h2>
+            <p className="mt-1 text-sm text-slate-600">Perbarui identitas dan informasi akademik akun mahasiswa.</p>
+          </div>
+          {formData && (
+            <ValidatedForm onSubmit={submitEdit} className="space-y-4">
+              {[
+                ['name', 'Nama lengkap', 'text'],
+                ['nim', 'NIM', 'text'],
+                ['email', 'Email', 'email'],
+                ['semester', 'Semester', 'number'],
+                ['angkatan', 'Angkatan', 'text']
+              ].map(([key, label, type]) => (
+                <label key={key} htmlFor={`edit-student-${key}`} className="block text-sm font-semibold text-slate-700">
+                  {label}
+                  <input
+                    id={`edit-student-${key}`}
+                    type={type}
+                    min={type === 'number' ? 1 : undefined}
+                    max={type === 'number' ? 14 : undefined}
+                    required
+                    value={formData[key]}
+                    onChange={(event) => setFormData(previous => ({ ...previous, [key]: event.target.value }))}
+                    className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600"
+                  />
+                </label>
+              ))}
+              {formError && <p role="alert" className="text-sm font-semibold text-rose-700">{formError}</p>}
+              <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                <button type="button" onClick={closeEditor} disabled={isSubmitting} className="min-h-11 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50">Batal</button>
+                <button type="submit" disabled={isSubmitting} className="min-h-11 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60">{isSubmitting ? 'Menyimpan...' : 'Simpan perubahan'}</button>
+              </div>
+            </ValidatedForm>
+          )}
+        </div>
+      </ModalShell>
     </section>
   );
 }
