@@ -1,6 +1,6 @@
 import ValidatedForm from '../common/ValidatedForm';
 import React, { useState } from 'react';
-import { X, Lock, User, GraduationCap, ShieldCheck } from 'lucide-react';
+import { X, Lock, User, GraduationCap, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import useApp from '../../hooks/useApp';
 import ModalShell from '../common/ModalShell';
 import { DialogClose } from '../ui/dialog';
@@ -10,6 +10,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   const [role, setRole] = useState('student'); // 'student' or 'admin'
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState('');
 
@@ -84,6 +85,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
                     setRole('student');
                     setUsername('');
                     setPassword('');
+                    setIsPasswordVisible(false);
                     setLoginError('');
                   }}
                   aria-pressed={role === 'student'}
@@ -103,6 +105,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
                     setRole('admin');
                     setUsername('');
                     setPassword('');
+                    setIsPasswordVisible(false);
                     setLoginError('');
                   }}
                   aria-pressed={role === 'admin'}
@@ -144,19 +147,30 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
                   <label htmlFor="login-password" className="mb-1.5 block text-xs font-bold text-slate-700">
                     Password Akun Showcase
                   </label>
-                  <input
-                    id="login-password"
-                    type="password"
-                    autoComplete="current-password"
-                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 text-base text-slate-800 placeholder-slate-500 transition-colors focus:border-sky-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 sm:text-sm"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setLoginError('');
-                    }}
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      id="login-password"
+                      type={isPasswordVisible ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 pr-12 text-base text-slate-800 placeholder-slate-500 transition-colors focus:border-sky-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 sm:text-sm"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setLoginError('');
+                      }}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsPasswordVisible((visible) => !visible)}
+                      aria-label={`${isPasswordVisible ? 'Sembunyikan' : 'Tampilkan'} password`}
+                      aria-pressed={isPasswordVisible}
+                      className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-xl text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
+                    >
+                      {isPasswordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 {loginError && (
