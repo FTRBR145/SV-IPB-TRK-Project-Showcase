@@ -6,7 +6,8 @@
     },
     "backend": {
       "root": "backend",
-      "entrypoint": "src/server.js"
+      "entrypoint": "src/server.js",
+      "includeFiles": ["certs/supabase-ca.crt"]
     }
   },
   "rewrites": [
