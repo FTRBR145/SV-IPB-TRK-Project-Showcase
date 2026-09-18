@@ -10,7 +10,9 @@ const repository = env.repository === 'memory'
   ? createMemoryRepository()
   : createPostgresRepository(createPostgresPool());
 if (env.repository === 'memory') console.warn('MODE DEMO MEMORY: data tidak permanen.');
-else await repository.getSettings(); // Fail before listening if connection/schema/seed is missing.
+// Keep the local fail-fast check, but do not make every serverless cold start
+// reserve a database connection before it can accept a request.
+else if (env.nodeEnv !== 'production') await repository.getSettings();
 const app = createApp({ repository });
 const server = app.listen(env.port, () => {
   console.log(`Showcase TRK API berjalan di http://localhost:${env.port}${env.apiPrefix}`);

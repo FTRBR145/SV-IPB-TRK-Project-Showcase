@@ -13,12 +13,15 @@ export function createPostgresPool() {
   }
   const pool = new pg.Pool({
     connectionString: url.toString(),
-    max: 5,
-    min: 1,
+    // Vercel can run many warm instances at once. Keep one connection per
+    // instance so the application-side pool cannot exhaust Supavisor.
+    max: env.nodeEnv === 'production' ? 1 : 5,
+    min: 0,
+    allowExitOnIdle: true,
     keepAlive: true,
     keepAliveInitialDelayMillis: 10000,
     connectionTimeoutMillis: 10000,
-    idleTimeoutMillis: 30000,
+    idleTimeoutMillis: env.nodeEnv === 'production' ? 5000 : 30000,
     statement_timeout: 15000,
     // Never disable TLS certificate verification for a remote database.
     ...(env.databaseCaFile ? { ssl: {
