@@ -18,20 +18,19 @@ import { courseLabel } from '../../utils/courseLabel';
 
 const MAX_BULK_SELECTION = 100;
 
-function SelectionCheckbox({ checked, disabled, onChange, label }) {
+function SelectionCheckbox({ checked, disabled, onChange, itemLabel }) {
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={checked}
-      aria-label={label}
+      aria-label={`${checked ? 'Batalkan pilihan' : 'Pilih'} ${itemLabel}`}
+      data-selection-control
+      data-select-label={`Pilih ${itemLabel}`}
+      data-deselect-label={`Batalkan pilihan ${itemLabel}`}
       disabled={disabled}
       onClick={onChange}
-      className={`inline-flex h-6 w-6 items-center justify-center rounded-md border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
-        checked
-          ? 'border-sky-600 bg-sky-600 text-white shadow-sm'
-          : 'border-slate-400 bg-white text-transparent hover:border-sky-600 hover:bg-sky-50'
-      }`}
+      className="selection-checkbox inline-flex h-6 w-6 items-center justify-center rounded-md border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
     >
       <Check size={16} strokeWidth={3} aria-hidden="true" />
     </button>
@@ -127,7 +126,7 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
             checked={selectedIds.has(row.id)}
             disabled={isDeleting || (!selectedIds.has(row.id) && selectedIds.size >= MAX_BULK_SELECTION)}
             onChange={() => toggleProject(row.id)}
-            label={`${selectedIds.has(row.id) ? 'Batalkan pilihan' : 'Pilih'} projek ${row.title}`}
+            itemLabel={`projek ${row.title}`}
           />
         </div>
       )
@@ -300,6 +299,9 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
         data={filteredProjects}
         searchTerm={searchQuery}
         columns={columns}
+        selectionState={selectedIds}
+        isRowSelected={(row) => selectedIds.has(row.id)}
+        isRowSelectionDisabled={(row) => isDeleting || (!selectedIds.has(row.id) && selectedIds.size >= MAX_BULK_SELECTION)}
         searchPlaceholder="Cari judul projek, nama mahasiswa, NIM, atau mata kuliah..."
         defaultPageSize={10}
         pageSizeOptions={[5, 10, 25, 50, 100]}
@@ -405,7 +407,7 @@ export function StudentsPanel({ students, onViewProjects, onUpdate, onDelete, on
             checked={selectedIds.has(row.id)}
             disabled={isDeleting || (!selectedIds.has(row.id) && selectedIds.size >= MAX_BULK_SELECTION)}
             onChange={() => toggleStudent(row.id)}
-            label={`${selectedIds.has(row.id) ? 'Batalkan pilihan' : 'Pilih'} akun mahasiswa ${row.name}`}
+            itemLabel={`akun mahasiswa ${row.name}`}
           />
         </div>
       )
@@ -517,6 +519,9 @@ export function StudentsPanel({ students, onViewProjects, onUpdate, onDelete, on
       <DataTable
         data={students}
         columns={columns}
+        selectionState={selectedIds}
+        isRowSelected={(row) => selectedIds.has(row.id)}
+        isRowSelectionDisabled={(row) => isDeleting || (!selectedIds.has(row.id) && selectedIds.size >= MAX_BULK_SELECTION)}
         extraHeaderActions={(
           <BulkSelectionBar
             items={students}

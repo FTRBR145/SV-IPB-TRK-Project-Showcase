@@ -28,7 +28,10 @@ export default function DataTable({
   exportFileName = 'data-export.csv',
   emptyMessage = 'Tidak ada data yang ditemukan.',
   searchTerm = '',
-  isRowInvalid
+  isRowInvalid,
+  selectionState,
+  isRowSelected,
+  isRowSelectionDisabled
 }) {
   const tableRef = useRef(null);
   const sortId = useId();
@@ -36,7 +39,26 @@ export default function DataTable({
   const [pageSize, setPageSize] = useState(defaultPageSize);
   const [sortSelection, setSortSelection] = useState(defaultSortKey ? `${defaultSortKey}:${defaultSortDirection}` : '');
   const columnsRef = useRef(columns);
+  const rowStateRef = useRef({ isRowInvalid, isRowSelected, isRowSelectionDisabled });
   columnsRef.current = columns;
+  rowStateRef.current = { isRowInvalid, isRowSelected, isRowSelectionDisabled };
+
+  const syncRowState = (row, data) => {
+    if (!row) return;
+    const currentState = rowStateRef.current;
+    row.classList.toggle('table-row-invalid', Boolean(currentState.isRowInvalid?.(data)));
+
+    const selectionControl = row.querySelector('[data-selection-control]');
+    if (!selectionControl) return;
+    const selected = Boolean(currentState.isRowSelected?.(data));
+    row.classList.toggle('table-row-selected', selected);
+    selectionControl.setAttribute('aria-checked', String(selected));
+    selectionControl.setAttribute(
+      'aria-label',
+      selected ? selectionControl.dataset.deselectLabel : selectionControl.dataset.selectLabel
+    );
+    selectionControl.disabled = Boolean(currentState.isRowSelectionDisabled?.(data));
+  };
 
   const dataTableColumns = useMemo(() => {
     const weights = columns.map(column => column.weight || ({ title: 2.4, course: 1.8, student: 1.6, name: 1.8, email: 1.8, actions: 1.3 }[column.key] || 1));
@@ -85,6 +107,14 @@ export default function DataTable({
     const table = tableRef.current?.dt();
     if (table && table.search() !== searchTerm) table.search(searchTerm).draw();
   }, [searchTerm]);
+
+  useEffect(() => {
+    const table = tableRef.current?.dt();
+    if (!table) return;
+    table.rows({ page: 'current' }).every(function syncVisibleRow() {
+      syncRowState(this.node(), this.data());
+    });
+  }, [selectionState]);
 
   const changeSort = (event) => {
     const selection = event.target.value;
@@ -159,7 +189,7 @@ export default function DataTable({
             setSortSelection(key ? `${key}:${direction}` : '');
           }}
           options={{
-            rowCallback: (row, data) => row.classList.toggle('table-row-invalid', Boolean(isRowInvalid?.(data))),
+            rowCallback: syncRowState,
             autoWidth: false,
             scrollX: false,
             search: { search: searchTerm },
