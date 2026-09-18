@@ -10,8 +10,10 @@ import {
 } from 'lucide-react';
 import DataTable from '../common/DataTable';
 import ConfirmDialog from '../common/ConfirmDialog';
+import { openShowcaseReport } from '../../services/printReport';
 
 export function ReportsPanel({ projects, submissions, students, logs, onExportProjects, onExportSubmissions, onExportLogs }) {
+  const [printError, setPrintError] = useState('');
   const reportItems = [
     { title: 'Data Projek', description: `${projects.length} projek terpublikasi`, action: onExportProjects },
     { title: 'Data Moderasi', description: `${submissions.length} histori pengajuan`, action: onExportSubmissions },
@@ -23,10 +25,16 @@ export function ReportsPanel({ projects, submissions, students, logs, onExportPr
       <section className="rounded-2xl bg-slate-900 p-6 text-white shadow-sm">
         <FileSpreadsheet size={28} className="text-sky-300 mb-3" />
         <h2 className="font-heading font-bold text-xl">Pusat Laporan TRK</h2>
-        <p className="text-sm text-slate-300 mt-1">Unduh data CSV atau cetak ringkasan dashboard untuk dokumentasi.</p>
-        <button onClick={() => window.print()} className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-900 text-sm font-bold hover:bg-slate-100 shadow-sm">
-          <Printer size={16} /> Cetak Ringkasan
+        <p className="text-sm text-slate-300 mt-1">Unduh data CSV atau cetak dokumen laporan lengkap yang siap disimpan sebagai PDF.</p>
+        <button onClick={() => {
+          setPrintError('');
+          if (!openShowcaseReport({ projects, submissions, students, logs })) {
+            setPrintError('Jendela laporan diblokir browser. Izinkan pop-up, lalu coba cetak kembali.');
+          }
+        }} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-900 shadow-sm hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
+          <Printer size={16} /> Cetak Laporan Lengkap
         </button>
+        {printError && <p role="alert" className="mt-3 text-sm font-semibold text-rose-200">{printError}</p>}
       </section>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

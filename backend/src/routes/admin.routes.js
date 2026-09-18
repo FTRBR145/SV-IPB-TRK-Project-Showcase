@@ -26,6 +26,18 @@ router.post('/courses', validate(courseSchema), async (request, response) => {
   sendData(response, { name: course }, 201);
 });
 
+router.patch('/courses/:name', validate(courseSchema), async (request, response) => {
+  const result = await request.app.locals.repository.updateCourse(request.params.name, request.body.name, request.user);
+  if (result.error === 'not_found') throw new ApiError(404, 'COURSE_NOT_FOUND', 'Mata kuliah tidak ditemukan.');
+  if (result.error === 'exists') throw new ApiError(409, 'COURSE_EXISTS', 'Nama mata kuliah sudah tersedia.');
+  sendData(response, {
+    name: result.course,
+    previousName: result.previousCourse,
+    updatedProjects: result.updatedProjects,
+    updatedSubmissions: result.updatedSubmissions
+  });
+});
+
 router.delete('/courses/:name', async (request, response) => {
   const result = await request.app.locals.repository.deleteCourse(request.params.name, request.user);
   if (result.error === 'not_found') throw new ApiError(404, 'COURSE_NOT_FOUND', 'Mata kuliah tidak ditemukan.');

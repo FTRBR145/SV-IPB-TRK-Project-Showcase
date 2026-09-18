@@ -839,8 +839,9 @@ export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
 // ============================================================================
 // 4. TAXONOMY PANEL (COURSES & CATEGORIES WITH DATATABLE)
 // ============================================================================
-export function TaxonomyPanel({ title, description, items, getCount, onAdd, onDelete }) {
+export function TaxonomyPanel({ title, description, items, getCount, onAdd, onUpdate, onDelete }) {
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
   const [formError, setFormError] = useState('');
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -852,12 +853,27 @@ export function TaxonomyPanel({ title, description, items, getCount, onAdd, onDe
     setIsSubmitting(true);
     setFormError('');
     try {
-      const added = await onAdd(name.trim());
-      if (added) { setName(''); setIsAddOpen(false); }
-      else setFormError('Data belum ditambahkan. Periksa nama atau coba kembali.');
+      const saved = editingItem
+        ? await onUpdate(editingItem.name, name.trim())
+        : await onAdd(name.trim());
+      if (saved) {
+        setName('');
+        setIsAddOpen(false);
+        setEditingItem(null);
+      } else {
+        setFormError(editingItem ? 'Nama belum diperbarui. Periksa nama atau coba kembali.' : 'Data belum ditambahkan. Periksa nama atau coba kembali.');
+      }
     } catch (error) {
-      setFormError(error.message || 'Data gagal ditambahkan. Silakan coba kembali.');
+      setFormError(error.message || (editingItem ? 'Nama gagal diperbarui. Silakan coba kembali.' : 'Data gagal ditambahkan. Silakan coba kembali.'));
     } finally { setIsSubmitting(false); }
+  };
+
+  const closeEditor = () => {
+    if (isSubmitting) return;
+    setIsAddOpen(false);
+    setEditingItem(null);
+    setName('');
+    setFormError('');
   };
 
   // Normalize items to objects if they are strings
@@ -906,7 +922,18 @@ export function TaxonomyPanel({ title, description, items, getCount, onAdd, onDe
       headerClassName: 'text-center',
       className: 'text-center',
       render: (row) => (
-        <div className="flex items-center justify-center">
+        <div className="table-action-group flex items-center justify-center gap-1.5">
+          {onUpdate && (
+            <button
+              type="button"
+              onClick={() => { setEditingItem(row); setName(row.name); setFormError(''); }}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-amber-50 p-2.5 text-amber-700 shadow-2xs transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+              title={`Edit ${title.toLowerCase()}`}
+              aria-label={`Edit ${title.toLowerCase()} ${row.name}`}
+            >
+              <Pencil size={16} />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -934,12 +961,12 @@ export function TaxonomyPanel({ title, description, items, getCount, onAdd, onDe
 
   return (
     <div className="min-w-0 space-y-4">
-      <ModalShell isOpen={isAddOpen} onClose={() => { if (!isSubmitting) setIsAddOpen(false); }} ariaLabel={`Tambah ${title.toLowerCase()}`} panelClassName="max-w-lg max-h-[90dvh] overflow-y-auto rounded-2xl">
+      <ModalShell isOpen={isAddOpen || Boolean(editingItem)} onClose={closeEditor} ariaLabel={`${editingItem ? 'Edit' : 'Tambah'} ${title.toLowerCase()}`} panelClassName="max-w-lg max-h-[90dvh] overflow-y-auto rounded-2xl">
       <DialogClose disabled={isSubmitting} aria-label={`Tutup form ${title.toLowerCase()}`} className="absolute right-3 top-3 flex min-h-11 min-w-11 items-center justify-center rounded-xl hover:bg-slate-100"><X size={18} /></DialogClose>
       <ValidatedForm onSubmit={submit} className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs space-y-4">
         <div>
-          <h2 className="font-heading font-bold text-base text-slate-900 pr-12">Tambah {title}</h2>
-          <p className="text-xs text-slate-500 mt-1">{description}</p>
+          <h2 className="font-heading font-bold text-base text-slate-900 pr-12">{editingItem ? 'Edit' : 'Tambah'} {title}</h2>
+          <p className="text-xs text-slate-500 mt-1">{editingItem ? 'Perubahan nama otomatis diterapkan pada projek dan pengajuan terkait.' : description}</p>
         </div>
         <label className="block text-xs font-bold text-slate-700">
           Nama {title} *
@@ -956,7 +983,8 @@ export function TaxonomyPanel({ title, description, items, getCount, onAdd, onDe
         </label>
         {formError && <p role="alert" className="text-sm text-rose-700">{formError}</p>}
         <button disabled={isSubmitting} className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 shadow-2xs transition-all disabled:cursor-wait disabled:opacity-60">
-          <Plus size={15} /> {isSubmitting ? 'Menambahkan...' : `Tambah ${title}`}
+          {editingItem ? <Pencil size={15} /> : <Plus size={15} />}
+          {isSubmitting ? 'Menyimpan...' : editingItem ? 'Simpan Perubahan' : `Tambah ${title}`}
         </button>
       </ValidatedForm>
       </ModalShell>
@@ -972,7 +1000,7 @@ export function TaxonomyPanel({ title, description, items, getCount, onAdd, onDe
             Item yang sedang terikat dengan projek tidak dapat dihapus demi integritas data.
           </p>
           </div>
-          <button type="button" onClick={() => { setName(''); setFormError(''); setIsAddOpen(true); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"><Plus size={16} /> Tambah {title}</button>
+          <button type="button" onClick={() => { setEditingItem(null); setName(''); setFormError(''); setIsAddOpen(true); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"><Plus size={16} /> Tambah {title}</button>
         </div>
 
         <DataTable

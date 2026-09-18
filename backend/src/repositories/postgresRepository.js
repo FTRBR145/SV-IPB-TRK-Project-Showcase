@@ -269,6 +269,24 @@ export function createPostgresRepository(pool) {
         return result.rows[0].name;
       });
     },
+    updateCourse(name, nextName, actor) {
+      return transaction(async client => {
+        const normalized=nextName.trim().toUpperCase();
+        // Renaming also updates JSONB references; block concurrent writes until all
+        // three tables agree on the new course name.
+        await client.query('lock table showcase.courses, showcase.projects, showcase.submissions in share row exclusive mode');
+        const existing=(await client.query('select name from showcase.courses where name=$1',[name])).rows[0];
+        if(!existing) return {error:'not_found'};
+        if(normalized===name) return {course:name,previousCourse:name,updatedProjects:0,updatedSubmissions:0};
+        const duplicate=(await client.query('select 1 from showcase.courses where name=$1 limit 1',[normalized])).rows[0];
+        if(duplicate) return {error:'exists'};
+        const projects=await client.query("update showcase.projects set data=jsonb_set(data,'{course}',to_jsonb($2::text),true) where data->>'course'=$1",[name,normalized]);
+        const submissions=await client.query("update showcase.submissions set data=jsonb_set(data,'{course}',to_jsonb($2::text),true) where data->>'course'=$1",[name,normalized]);
+        await client.query('update showcase.courses set name=$2 where name=$1',[name,normalized]);
+        await log(client,`Mata kuliah “${name}” diubah menjadi “${normalized}”.`,'taxonomy',actor);
+        return {course:normalized,previousCourse:name,updatedProjects:projects.rowCount,updatedSubmissions:submissions.rowCount};
+      });
+    },
     deleteCourse(name, actor) {
       return transaction(async client => {
         // Prevent concurrent uploads from racing the in-use check.

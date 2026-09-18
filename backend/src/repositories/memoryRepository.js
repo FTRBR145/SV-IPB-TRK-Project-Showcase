@@ -280,6 +280,25 @@ export function createMemoryRepository(initialData = createSeedData()) {
       return normalized;
     },
 
+    updateCourse(name, nextName, actor) {
+      const index = state.courses.indexOf(name);
+      if (index < 0) return { error: 'not_found' };
+      const normalized = nextName.trim().toUpperCase();
+      if (normalized === name) return { course: name, previousCourse: name, updatedProjects: 0, updatedSubmissions: 0 };
+      if (state.courses.some((course) => course === normalized)) return { error: 'exists' };
+      let updatedProjects = 0;
+      let updatedSubmissions = 0;
+      state.projects.forEach((project) => {
+        if (project.course === name) { project.course = normalized; updatedProjects += 1; }
+      });
+      state.submissions.forEach((submission) => {
+        if (submission.course === name) { submission.course = normalized; updatedSubmissions += 1; }
+      });
+      state.courses[index] = normalized;
+      recordActivity(`Mata kuliah “${name}” diubah menjadi “${normalized}”.`, 'taxonomy', actor);
+      return { course: normalized, previousCourse: name, updatedProjects, updatedSubmissions };
+    },
+
     deleteCourse(name, actor) {
       const inUse = [...state.projects, ...state.submissions].some((item) => item.course === name);
       if (inUse) return { error: 'in_use' };

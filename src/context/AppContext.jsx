@@ -396,6 +396,23 @@ export function AppProvider({ children }) {
     }
   };
 
+  const updateCourse = async (courseName, nextName) => {
+    try {
+      const result = await apiRequest(`/courses/${encodeURIComponent(courseName)}`, {
+        method: 'PATCH',
+        body: { name: nextName }
+      });
+      setCourses((previous) => previous.map((course) => course === courseName ? result.name : course));
+      setProjects((previous) => previous.map((project) => project.course === courseName ? { ...project, course: result.name } : project));
+      setSubmissions((previous) => previous.map((submission) => submission.course === courseName ? { ...submission, course: result.name } : submission));
+      await refreshActivityLogs();
+      showToast('Nama mata kuliah berhasil diperbarui.');
+      return true;
+    } catch (error) {
+      return reportApiError(error, 'Nama mata kuliah gagal diperbarui.');
+    }
+  };
+
   const deleteCourse = async (courseName) => {
     try {
       await apiRequest(`/courses/${encodeURIComponent(courseName)}`, { method: 'DELETE' });
@@ -479,6 +496,7 @@ export function AppProvider({ children }) {
       deleteStudent,
       deleteStudents,
       addCourse,
+      updateCourse,
       deleteCourse,
       updateAdminSettings,
       clearActivityLogs

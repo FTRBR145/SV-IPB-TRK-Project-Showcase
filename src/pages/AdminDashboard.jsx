@@ -63,6 +63,7 @@ export default function AdminDashboard() {
     deleteStudent,
     deleteStudents,
     addCourse,
+    updateCourse,
     deleteCourse,
     updateAdminSettings,
     clearActivityLogs,
@@ -125,6 +126,7 @@ export default function AdminDashboard() {
             items={courses}
             getCount={(course) => projects.filter((project) => project.course === course).length + submissions.filter((submission) => submission.course === course).length}
             onAdd={addCourse}
+            onUpdate={updateCourse}
             onDelete={deleteCourse}
           />
         );
