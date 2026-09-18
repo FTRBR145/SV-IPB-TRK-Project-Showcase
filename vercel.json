@@ -13,14 +13,12 @@
     {
       "source": "/api(/.*)?",
       "destination": {
-        "type": "service",
         "service": "backend"
       }
     },
     {
       "source": "/admin",
       "destination": {
-        "type": "service",
         "service": "frontend",
         "path": "/index.html"
       }
@@ -28,7 +26,6 @@
     {
       "source": "/account",
       "destination": {
-        "type": "service",
         "service": "frontend",
         "path": "/index.html"
       }
@@ -36,7 +33,6 @@
     {
       "source": "/student",
       "destination": {
-        "type": "service",
         "service": "frontend",
         "path": "/index.html"
       }
@@ -44,7 +40,6 @@
     {
       "source": "/student/(.*)",
       "destination": {
-        "type": "service",
         "service": "frontend",
         "path": "/index.html"
       }
@@ -52,7 +47,6 @@
     {
       "source": "/project/(.*)",
       "destination": {
-        "type": "service",
         "service": "frontend",
         "path": "/index.html"
       }
@@ -60,7 +54,6 @@
     {
       "source": "/beranda",
       "destination": {
-        "type": "service",
         "service": "frontend",
         "path": "/index.html"
       }
@@ -68,7 +61,6 @@
     {
       "source": "/(.*)",
       "destination": {
-        "type": "service",
         "service": "frontend"
       }
     }
