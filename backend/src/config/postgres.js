@@ -1,5 +1,5 @@
 import pg from 'pg';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { env } from './env.js';
@@ -22,7 +22,14 @@ export function createPostgresPool() {
     statement_timeout: 15000,
     // Never disable TLS certificate verification for a remote database.
     ...(env.databaseCaFile ? { ssl: {
-      ca: readFileSync(resolve(fileURLToPath(new URL('../../', import.meta.url)), env.databaseCaFile), 'utf8'),
+      ca: readFileSync(
+        (() => {
+          const configuredPath = resolve(fileURLToPath(new URL('../../', import.meta.url)), env.databaseCaFile);
+          const bundledPath = fileURLToPath(new URL('./supabase-ca.crt', import.meta.url));
+          return existsSync(configuredPath) ? configuredPath : bundledPath;
+        })(),
+        'utf8'
+      ),
       rejectUnauthorized: true
     } } : {})
   });
