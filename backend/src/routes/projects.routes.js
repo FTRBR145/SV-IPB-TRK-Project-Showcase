@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate, authorize, optionalAuthenticate } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { projectSchema, projectUpdateSchema } from '../schemas/index.js';
+import { bulkDeleteSchema, projectSchema, projectUpdateSchema } from '../schemas/index.js';
 import { ApiError, sendData } from '../utils/http.js';
 
 const router = Router();
@@ -46,6 +46,14 @@ router.post('/', optionalAuthenticate, validate(projectSchema), async (request, 
 
   const project = await repository.createProject(projectData, request.user || 'Tamu');
   return sendData(response, { type: 'project', item: project }, 201);
+});
+
+router.post('/bulk-delete', authenticate, authorize('admin'), validate(bulkDeleteSchema), async (request, response) => {
+  const result = await request.app.locals.repository.deleteProjects(request.body.ids, request.user);
+  if (result.error === 'not_found') {
+    throw new ApiError(404, 'PROJECT_NOT_FOUND', 'Satu atau beberapa projek tidak ditemukan. Tidak ada projek yang dihapus.');
+  }
+  sendData(response, { ids: result.projects.map((project) => project.id), deletedCount: result.projects.length });
 });
 
 router.patch('/:id', authenticate, authorize('admin'), validate(projectUpdateSchema), async (request, response) => {

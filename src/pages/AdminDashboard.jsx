@@ -55,11 +55,13 @@ export default function AdminDashboard() {
     rejectSubmission,
     restoreSubmission,
     deleteProject,
+    deleteProjects,
     addModerator,
     toggleModerator,
     deleteModerator,
     updateStudent,
     deleteStudent,
+    deleteStudents,
     addCourse,
     deleteCourse,
     updateAdminSettings,
@@ -107,13 +109,14 @@ export default function AdminDashboard() {
             onSearchChange={setProjectSearch}
             onEdit={setEditingProject}
             onDelete={deleteProject}
+            onDeleteMany={deleteProjects}
             onView={setPreviewProject}
           />
         );
       case 'moderators':
         return <ModeratorsPanel moderators={moderators} onAdd={addModerator} onToggle={toggleModerator} onDelete={deleteModerator} />;
       case 'students':
-        return <StudentsPanel students={students} onViewProjects={viewStudentProjects} onUpdate={updateStudent} onDelete={deleteStudent} />;
+        return <StudentsPanel students={students} onViewProjects={viewStudentProjects} onUpdate={updateStudent} onDelete={deleteStudent} onDeleteMany={deleteStudents} />;
       case 'courses':
         return (
           <TaxonomyPanel

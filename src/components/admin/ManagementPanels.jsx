@@ -1,6 +1,6 @@
 import ValidatedForm from '../common/ValidatedForm';
 import StudentEnrollment from './StudentEnrollment';
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Eye,
   Pencil,
@@ -15,18 +15,104 @@ import ModalShell from '../common/ModalShell';
 import { DialogClose } from '../ui/dialog';
 import { courseLabel } from '../../utils/courseLabel';
 
+const MAX_BULK_SELECTION = 100;
+
+function BulkSelectionBar({ items, selectedIds, setSelectedIds, isDeleting, onDelete, noun, deleteNote }) {
+  const itemIds = items.map((item) => item.id);
+  const selectableIds = itemIds.slice(0, MAX_BULK_SELECTION);
+  const allSelectableSelected = selectableIds.length > 0 && selectableIds.every((id) => selectedIds.has(id));
+
+  return (
+    <div className="flex min-w-0 flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setSelectedIds(allSelectableSelected ? new Set() : new Set(selectableIds))}
+          disabled={isDeleting || itemIds.length === 0}
+          className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
+        >
+          {allSelectableSelected ? 'Batalkan semua' : `Pilih semua${itemIds.length > MAX_BULK_SELECTION ? ` (maks. ${MAX_BULK_SELECTION})` : ''}`}
+        </button>
+        <span className="text-xs font-semibold tabular-nums text-slate-600" aria-live="polite">{selectedIds.size} {noun} dipilih</span>
+      </div>
+      <button
+        type="button"
+        onClick={onDelete}
+        disabled={isDeleting || selectedIds.size === 0}
+        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-rose-700 px-4 py-2 text-xs font-bold text-white hover:bg-rose-800 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600 focus-visible:ring-offset-2"
+        title={deleteNote}
+      >
+        <Trash2 size={15} /> {isDeleting ? 'Menghapus...' : `Hapus terpilih (${selectedIds.size})`}
+      </button>
+    </div>
+  );
+}
+
 // ============================================================================
 // 1. PROJECTS PANEL (WITH DATATABLE)
 // ============================================================================
-export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, onView }) {
+export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, onDeleteMany, onView }) {
   const [semesterFilter, setSemesterFilter] = useState('ALL');
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredProjects = useMemo(() => {
     if (semesterFilter === 'ALL') return projects;
     return projects.filter((p) => String(p.semester) === String(semesterFilter));
   }, [projects, semesterFilter]);
 
+  useEffect(() => {
+    const availableIds = new Set(projects.map((project) => project.id));
+    setSelectedIds((previous) => new Set([...previous].filter((id) => availableIds.has(id))));
+  }, [projects]);
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [semesterFilter, searchQuery]);
+
+  const toggleProject = (projectId) => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(projectId)) next.delete(projectId);
+      else if (next.size < MAX_BULK_SELECTION) next.add(projectId);
+      return next;
+    });
+  };
+
+  const deleteSelectedProjects = async () => {
+    if (selectedIds.size === 0 || isDeleting) return;
+    if (!window.confirm(`Hapus ${selectedIds.size} projek terpilih? Tindakan ini tidak dapat dibatalkan.`)) return;
+    setIsDeleting(true);
+    try {
+      if (await onDeleteMany([...selectedIds])) setSelectedIds(new Set());
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const columns = [
+    {
+      key: 'selection',
+      label: 'Pilih',
+      sortable: false,
+      searchable: false,
+      exportable: false,
+      headerClassName: 'text-center',
+      className: 'text-center',
+      weight: 0.6,
+      render: (row) => (
+        <label className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl hover:bg-slate-100">
+          <span className="sr-only">Pilih projek {row.title}</span>
+          <input
+            type="checkbox"
+            checked={selectedIds.has(row.id)}
+            disabled={isDeleting || (!selectedIds.has(row.id) && selectedIds.size >= MAX_BULK_SELECTION)}
+            onChange={() => toggleProject(row.id)}
+            className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-600"
+          />
+        </label>
+      )
+    },
     {
       key: 'title',
       label: 'Projek & Video',
@@ -163,6 +249,21 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
     </div>
   );
 
+  const projectTableActions = (
+    <div className="space-y-2">
+      {semesterFilterButtons}
+      <BulkSelectionBar
+        items={filteredProjects}
+        selectedIds={selectedIds}
+        setSelectedIds={setSelectedIds}
+        isDeleting={isDeleting}
+        onDelete={deleteSelectedProjects}
+        noun="projek"
+        deleteNote="Hapus seluruh projek yang dipilih"
+      />
+    </div>
+  );
+
   return (
     <section className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
@@ -185,7 +286,7 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
         pageSizeOptions={[5, 10, 25, 50, 100]}
         defaultSortKey="title"
         defaultSortDirection="asc"
-        extraHeaderActions={semesterFilterButtons}
+        extraHeaderActions={projectTableActions}
         showExportCsv={true}
         exportFileName="data-projek-mahasiswa-trk.csv"
         emptyMessage="Tidak ada projek yang cocok dengan filter saat ini."
@@ -197,11 +298,38 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
 // ============================================================================
 // 2. STUDENTS PANEL (WITH DATATABLE)
 // ============================================================================
-export function StudentsPanel({ students, onViewProjects, onUpdate, onDelete }) {
+export function StudentsPanel({ students, onViewProjects, onUpdate, onDelete, onDeleteMany }) {
   const [editingStudent, setEditingStudent] = useState(null);
   const [formData, setFormData] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const availableIds = new Set(students.map((student) => student.id));
+    setSelectedIds((previous) => new Set([...previous].filter((id) => availableIds.has(id))));
+  }, [students]);
+
+  const toggleStudent = (studentId) => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(studentId)) next.delete(studentId);
+      else if (next.size < MAX_BULK_SELECTION) next.add(studentId);
+      return next;
+    });
+  };
+
+  const deleteSelectedStudents = async () => {
+    if (selectedIds.size === 0 || isDeleting) return;
+    if (!window.confirm(`Hapus ${selectedIds.size} akun mahasiswa terpilih? Projek mereka tetap dipertahankan.`)) return;
+    setIsDeleting(true);
+    try {
+      if (await onDeleteMany([...selectedIds])) setSelectedIds(new Set());
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const openEditor = (student) => {
     setEditingStudent(student);
@@ -243,6 +371,28 @@ export function StudentsPanel({ students, onViewProjects, onUpdate, onDelete }) 
   };
 
   const columns = [
+    {
+      key: 'selection',
+      label: 'Pilih',
+      sortable: false,
+      searchable: false,
+      exportable: false,
+      headerClassName: 'text-center',
+      className: 'text-center',
+      weight: 0.6,
+      render: (row) => (
+        <label className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl hover:bg-slate-100">
+          <span className="sr-only">Pilih akun mahasiswa {row.name}</span>
+          <input
+            type="checkbox"
+            checked={selectedIds.has(row.id)}
+            disabled={isDeleting || (!selectedIds.has(row.id) && selectedIds.size >= MAX_BULK_SELECTION)}
+            onChange={() => toggleStudent(row.id)}
+            className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-600"
+          />
+        </label>
+      )
+    },
     {
       key: 'nim',
       label: 'NIM Mahasiswa',
@@ -350,6 +500,17 @@ export function StudentsPanel({ students, onViewProjects, onUpdate, onDelete }) 
       <DataTable
         data={students}
         columns={columns}
+        extraHeaderActions={(
+          <BulkSelectionBar
+            items={students}
+            selectedIds={selectedIds}
+            setSelectedIds={setSelectedIds}
+            isDeleting={isDeleting}
+            onDelete={deleteSelectedStudents}
+            noun="akun"
+            deleteNote="Hapus seluruh akun mahasiswa yang dipilih; projek tetap dipertahankan"
+          />
+        )}
         searchPlaceholder="Cari mahasiswa berdasarkan nama atau NIM..."
         defaultPageSize={10}
         pageSizeOptions={[5, 10, 25, 50]}

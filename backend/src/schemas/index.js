@@ -37,6 +37,11 @@ export const projectUpdateSchema = projectSchema
   .partial()
   .refine((value) => Object.keys(value).length > 0, 'Minimal satu perubahan wajib dikirim.');
 
+export const bulkDeleteSchema = z.object({
+  ids: z.array(z.coerce.number().int().positive()).min(1).max(100)
+    .transform((ids) => [...new Set(ids)])
+}).strict();
+
 export const courseSchema = z.object({
   name: z.string().trim().min(3).max(160)
 });

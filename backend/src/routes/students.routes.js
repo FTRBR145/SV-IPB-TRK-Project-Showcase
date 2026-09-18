@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { randomBytes } from 'node:crypto';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { studentSchema } from '../schemas/index.js';
+import { bulkDeleteSchema, studentSchema } from '../schemas/index.js';
 import { ApiError, sendData } from '../utils/http.js';
 
 const router = Router();
@@ -70,6 +70,14 @@ router.post('/', async (req, res) => {
   }
   const students = await repository.createStudents(users, req.user);
   sendData(res, { students, credentials }, 201);
+});
+
+router.post('/bulk-delete', validate(bulkDeleteSchema), async (req, res) => {
+  const result = await req.app.locals.repository.deleteStudents(req.body.ids, req.user);
+  if (result.error === 'not_found') {
+    throw new ApiError(404, 'STUDENT_NOT_FOUND', 'Satu atau beberapa akun mahasiswa tidak ditemukan. Tidak ada akun yang dihapus.');
+  }
+  sendData(res, { ids: result.students.map((student) => student.id), deletedCount: result.students.length });
 });
 
 router.patch('/:id', validate(studentSchema), async (req, res) => {

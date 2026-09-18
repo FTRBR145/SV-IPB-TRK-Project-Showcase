@@ -334,6 +334,19 @@ export function AppProvider({ children }) {
     }
   };
 
+  const deleteProjects = async (projectIds) => {
+    try {
+      const result = await apiRequest('/projects/bulk-delete', { method: 'POST', body: { ids: projectIds } });
+      const deletedIds = new Set(result.ids);
+      setProjects((previous) => previous.filter((project) => !deletedIds.has(project.id)));
+      await refreshActivityLogs();
+      showToast(`${result.deletedCount} projek berhasil dihapus.`, 'info');
+      return true;
+    } catch (error) {
+      return reportApiError(error, 'Projek terpilih gagal dihapus.');
+    }
+  };
+
   const updateStudent = async (studentId, updates) => {
     try {
       const student = await apiRequest(`/students/${studentId}`, { method: 'PATCH', body: updates });
@@ -355,6 +368,19 @@ export function AppProvider({ children }) {
       return true;
     } catch (error) {
       return reportApiError(error, 'Akun mahasiswa gagal dihapus.');
+    }
+  };
+
+  const deleteStudents = async (studentIds) => {
+    try {
+      const result = await apiRequest('/students/bulk-delete', { method: 'POST', body: { ids: studentIds } });
+      const deletedIds = new Set(result.ids);
+      setStudentAccounts((previous) => previous.filter((student) => !deletedIds.has(student.id)));
+      await refreshActivityLogs();
+      showToast(`${result.deletedCount} akun mahasiswa berhasil dihapus.`, 'info');
+      return true;
+    } catch (error) {
+      return reportApiError(error, 'Akun mahasiswa terpilih gagal dihapus.');
     }
   };
 
@@ -442,6 +468,7 @@ export function AppProvider({ children }) {
       addProject,
       updateProject,
       deleteProject,
+      deleteProjects,
       approveSubmission,
       rejectSubmission,
       restoreSubmission,
@@ -450,6 +477,7 @@ export function AppProvider({ children }) {
       deleteModerator,
       updateStudent,
       deleteStudent,
+      deleteStudents,
       addCourse,
       deleteCourse,
       updateAdminSettings,

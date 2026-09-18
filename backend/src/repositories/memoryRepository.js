@@ -88,6 +88,14 @@ export function createMemoryRepository(initialData = createSeedData()) {
       const { passwordHash: _hash, ...student } = removed;
       return { student: clone(student) };
     },
+    deleteStudents(ids, actor) {
+      const studentIds = new Set(ids.map(Number));
+      const students = state.users.filter(user => studentIds.has(user.id) && user.role === 'student');
+      if (students.length !== studentIds.size) return { error: 'not_found' };
+      state.users = state.users.filter(user => !studentIds.has(user.id));
+      recordActivity(`${students.length} akun mahasiswa dihapus sekaligus.`, 'danger', actor);
+      return { students: clone(students.map(({passwordHash: _hash, ...student}) => student)) };
+    },
     reset() {
       state = clone(initialData);
     },
@@ -167,6 +175,14 @@ export function createMemoryRepository(initialData = createSeedData()) {
       const [removed] = state.projects.splice(index, 1);
       recordActivity(`Projek “${removed.title}” dihapus.`, 'danger', actor);
       return clone(removed);
+    },
+    deleteProjects(ids, actor) {
+      const projectIds = new Set(ids.map(Number));
+      const projects = state.projects.filter(project => projectIds.has(project.id));
+      if (projects.length !== projectIds.size) return { error: 'not_found' };
+      state.projects = state.projects.filter(project => !projectIds.has(project.id));
+      recordActivity(`${projects.length} projek dihapus sekaligus.`, 'danger', actor);
+      return { projects: clone(projects) };
     },
 
     createSubmission(data, actor) {

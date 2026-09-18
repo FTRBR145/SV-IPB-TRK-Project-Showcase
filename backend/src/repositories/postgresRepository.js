@@ -119,6 +119,22 @@ export function createPostgresRepository(pool) {
         return { student: removed };
       });
     },
+    deleteStudents(ids, actor) {
+      return transaction(async client => {
+        const studentIds = ids.map(asId);
+        const existingRows = (await client.query(
+          "select * from showcase.users where id=any($1::bigint[]) and data->>'role'='student' for update",
+          [studentIds]
+        )).rows;
+        if (existingRows.length !== studentIds.length) return { error: 'not_found' };
+        const removed = (await client.query(
+          "delete from showcase.users where id=any($1::bigint[]) and data->>'role'='student' returning id, data - 'passwordHash' as data",
+          [studentIds]
+        )).rows.map(unpack);
+        await log(client, `${removed.length} akun mahasiswa dihapus sekaligus.`, 'danger', actor);
+        return { students: removed };
+      });
+    },
     async health() { await query('select 1 from showcase.settings where id=1'); },
     async close() { await pool.end(); },
     async seed(seed) {
@@ -187,6 +203,22 @@ export function createPostgresRepository(pool) {
         const project = unpack((await client.query('delete from showcase.projects where id=$1 returning *', [asId(id)])).rows[0]);
         if (project) await log(client, `Projek “${project.title}” dihapus.`, 'danger', actor);
         return project;
+      });
+    },
+    deleteProjects(ids, actor) {
+      return transaction(async client => {
+        const projectIds = ids.map(asId);
+        const existingRows = (await client.query(
+          'select id from showcase.projects where id=any($1::bigint[]) for update',
+          [projectIds]
+        )).rows;
+        if (existingRows.length !== projectIds.length) return { error: 'not_found' };
+        const projects = (await client.query(
+          'delete from showcase.projects where id=any($1::bigint[]) returning *',
+          [projectIds]
+        )).rows.map(unpack);
+        await log(client, `${projects.length} projek dihapus sekaligus.`, 'danger', actor);
+        return { projects };
       });
     },
     createSubmission(data, actor) {
