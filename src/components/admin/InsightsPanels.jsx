@@ -9,6 +9,7 @@ import {
   Trash2
 } from 'lucide-react';
 import DataTable from '../common/DataTable';
+import ConfirmDialog from '../common/ConfirmDialog';
 
 export function ReportsPanel({ projects, submissions, students, logs, onExportProjects, onExportSubmissions, onExportLogs }) {
   const reportItems = [
@@ -136,6 +137,7 @@ export function ActivityLogsPanel({ logs, onClear, onRefresh }) {
   const [dateFilter, setDateFilter] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState('');
+  const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const types = ['all', ...new Set([...Object.keys(activityTypes), ...logs.map((log) => log.type)])];
 
   const filteredLogs = useMemo(() => {
@@ -226,7 +228,7 @@ export function ActivityLogsPanel({ logs, onClear, onRefresh }) {
         finally { setRefreshing(false); }
       }}>{refreshing ? 'Memuat...' : 'Segarkan log'}</button>}
       <button
-        onClick={() => window.confirm('Bersihkan seluruh log aktivitas?') && onClear()}
+        onClick={() => setIsClearDialogOpen(true)}
         className="p-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors shadow-2xs"
         title="Bersihkan seluruh log aktivitas"
         aria-label="Bersihkan seluruh log aktivitas"
@@ -260,6 +262,14 @@ export function ActivityLogsPanel({ logs, onClear, onRefresh }) {
         showExportCsv={true}
         exportFileName="log-aktivitas-showcase.csv"
         emptyMessage={logs.length ? 'Tidak ada aktivitas yang cocok dengan filter.' : 'Belum ada aktivitas yang tercatat.'}
+      />
+      <ConfirmDialog
+        isOpen={isClearDialogOpen}
+        onClose={() => setIsClearDialogOpen(false)}
+        onConfirm={onClear}
+        title="Bersihkan seluruh log?"
+        description={`${logs.length} aktivitas yang tersimpan akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`}
+        confirmLabel="Bersihkan log"
       />
     </section>
   );

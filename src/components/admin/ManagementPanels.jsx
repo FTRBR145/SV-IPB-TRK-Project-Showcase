@@ -12,6 +12,7 @@ import {
   X
 } from 'lucide-react';
 import DataTable from '../common/DataTable';
+import ConfirmDialog from '../common/ConfirmDialog';
 import ModalShell from '../common/ModalShell';
 import { DialogClose } from '../ui/dialog';
 import { courseLabel } from '../../utils/courseLabel';
@@ -75,6 +76,7 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
   const [semesterFilter, setSemesterFilter] = useState('ALL');
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const filteredProjects = useMemo(() => {
     if (semesterFilter === 'ALL') return projects;
@@ -101,10 +103,22 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
 
   const deleteSelectedProjects = async () => {
     if (selectedIds.size === 0 || isDeleting) return;
-    if (!window.confirm(`Hapus ${selectedIds.size} projek terpilih? Tindakan ini tidak dapat dibatalkan.`)) return;
+    setDeleteTarget({ kind: 'bulk', count: selectedIds.size });
+  };
+
+  const confirmProjectDeletion = async () => {
+    if (!deleteTarget || isDeleting) return false;
     setIsDeleting(true);
     try {
-      if (await onDeleteMany([...selectedIds])) setSelectedIds(new Set());
+      const deleted = deleteTarget.kind === 'bulk'
+        ? await onDeleteMany([...selectedIds])
+        : await onDelete(deleteTarget.item.id);
+      if (deleted !== false) {
+        if (deleteTarget.kind === 'bulk') setSelectedIds(new Set());
+        setDeleteTarget(null);
+        return true;
+      }
+      return false;
     } finally {
       setIsDeleting(false);
     }
@@ -225,9 +239,7 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
           </button>
           <button
             type="button"
-            onClick={() => {
-              if (window.confirm(`Hapus projek “${row.title}”?`)) onDelete(row.id);
-            }}
+            onClick={() => setDeleteTarget({ kind: 'single', item: row })}
             className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-rose-50 p-2.5 text-rose-700 shadow-2xs transition-colors hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
             title="Hapus Projek"
             aria-label={`Hapus projek ${row.title}`}
@@ -283,6 +295,7 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
   );
 
   return (
+    <>
     <section className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div>
@@ -313,6 +326,17 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
         emptyMessage="Tidak ada projek yang cocok dengan filter saat ini."
       />
     </section>
+    <ConfirmDialog
+      isOpen={Boolean(deleteTarget)}
+      onClose={() => { if (!isDeleting) setDeleteTarget(null); }}
+      onConfirm={confirmProjectDeletion}
+      title={deleteTarget?.kind === 'bulk' ? `Hapus ${deleteTarget.count} projek?` : 'Hapus projek?'}
+      description={deleteTarget?.kind === 'bulk'
+        ? 'Seluruh projek yang dipilih akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.'
+        : `Projek “${deleteTarget?.item?.title || ''}” akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`}
+      confirmLabel={deleteTarget?.kind === 'bulk' ? `Hapus ${deleteTarget.count} projek` : 'Hapus projek'}
+    />
+    </>
   );
 }
 
@@ -326,6 +350,7 @@ export function StudentsPanel({ students, onViewProjects, onUpdate, onDelete, on
   const [formError, setFormError] = useState('');
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
     const availableIds = new Set(students.map((student) => student.id));
@@ -343,10 +368,22 @@ export function StudentsPanel({ students, onViewProjects, onUpdate, onDelete, on
 
   const deleteSelectedStudents = async () => {
     if (selectedIds.size === 0 || isDeleting) return;
-    if (!window.confirm(`Hapus ${selectedIds.size} akun mahasiswa terpilih? Projek mereka tetap dipertahankan.`)) return;
+    setDeleteTarget({ kind: 'bulk', count: selectedIds.size });
+  };
+
+  const confirmStudentDeletion = async () => {
+    if (!deleteTarget || isDeleting) return false;
     setIsDeleting(true);
     try {
-      if (await onDeleteMany([...selectedIds])) setSelectedIds(new Set());
+      const deleted = deleteTarget.kind === 'bulk'
+        ? await onDeleteMany([...selectedIds])
+        : await onDelete(deleteTarget.item.id);
+      if (deleted !== false) {
+        if (deleteTarget.kind === 'bulk') setSelectedIds(new Set());
+        setDeleteTarget(null);
+        return true;
+      }
+      return false;
     } finally {
       setIsDeleting(false);
     }
@@ -488,9 +525,7 @@ export function StudentsPanel({ students, onViewProjects, onUpdate, onDelete, on
           </button>
           <button
             type="button"
-            onClick={() => {
-              if (window.confirm(`Hapus akun mahasiswa ${row.name}? Data projek mahasiswa tetap dipertahankan.`)) onDelete(row.id);
-            }}
+            onClick={() => setDeleteTarget({ kind: 'single', item: row })}
             className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-rose-50 p-2.5 text-rose-700 shadow-2xs transition-colors hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
             title="Hapus akun mahasiswa"
             aria-label={`Hapus akun mahasiswa ${row.name}`}
@@ -584,6 +619,16 @@ export function StudentsPanel({ students, onViewProjects, onUpdate, onDelete, on
           )}
         </div>
       </ModalShell>
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => { if (!isDeleting) setDeleteTarget(null); }}
+        onConfirm={confirmStudentDeletion}
+        title={deleteTarget?.kind === 'bulk' ? `Hapus ${deleteTarget.count} akun mahasiswa?` : 'Hapus akun mahasiswa?'}
+        description={deleteTarget?.kind === 'bulk'
+          ? 'Akun mahasiswa yang dipilih akan dihapus, tetapi seluruh projek mereka tetap dipertahankan.'
+          : `Akun ${deleteTarget?.item?.name || 'mahasiswa'} akan dihapus, tetapi seluruh projeknya tetap dipertahankan.`}
+        confirmLabel={deleteTarget?.kind === 'bulk' ? `Hapus ${deleteTarget.count} akun` : 'Hapus akun'}
+      />
     </section>
   );
 }
@@ -596,6 +641,7 @@ export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
   const [formData, setFormData] = useState({ name: '', nip: '', email: '', role: 'admin' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -687,9 +733,7 @@ export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
           </button>
           <button
             type="button"
-            onClick={() => {
-              if (window.confirm(`Hapus moderator ${row.name}?`)) onDelete(row.id);
-            }}
+            onClick={() => setDeleteTarget(row)}
             className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-rose-50 p-2.5 text-rose-700 shadow-2xs transition-colors hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
             title="Hapus moderator"
             aria-label={`Hapus moderator ${row.name}`}
@@ -780,6 +824,14 @@ export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
           emptyMessage="Moderator tidak ditemukan."
         />
       </section>
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => onDelete(deleteTarget.id)}
+        title="Hapus moderator?"
+        description={`Akses moderator ${deleteTarget?.name || ''} akan dicabut permanen.`}
+        confirmLabel="Hapus moderator"
+      />
     </div>
   );
 }
@@ -792,6 +844,7 @@ export function TaxonomyPanel({ title, description, items, getCount, onAdd, onDe
   const [formError, setFormError] = useState('');
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -861,7 +914,7 @@ export function TaxonomyPanel({ title, description, items, getCount, onAdd, onDe
                 setFormError(`Tidak dapat menghapus “${row.name}” karena masih digunakan oleh ${row.projectCount} projek.`);
                 return;
               }
-              if (window.confirm(`Hapus ${title.toLowerCase()} “${row.name}”?`)) onDelete(row.name);
+              setDeleteTarget(row);
             }}
             disabled={row.projectCount > 0}
             className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl p-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
@@ -935,6 +988,14 @@ export function TaxonomyPanel({ title, description, items, getCount, onAdd, onDe
           emptyMessage={`${title} tidak ditemukan.`}
         />
       </section>
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => onDelete(deleteTarget.name)}
+        title={`Hapus ${title.toLowerCase()}?`}
+        description={`“${deleteTarget?.name || ''}” akan dihapus permanen dari daftar ${title.toLowerCase()}.`}
+        confirmLabel={`Hapus ${title.toLowerCase()}`}
+      />
     </div>
   );
 }
