@@ -107,12 +107,13 @@ export function createMemoryRepository(initialData = createSeedData()) {
     findUserByIdentifier(identifier) {
       const normalized = identifier.trim().toLowerCase();
       return state.users.find((user) =>
-        user.email.toLowerCase() === normalized || String(user.nim || '').toLowerCase() === normalized
+        (user.email.toLowerCase() === normalized || String(user.nim || '').toLowerCase() === normalized)
+        && (user.status || 'active') === 'active'
       ) || null;
     },
 
     findUserById(id) {
-      return state.users.find((user) => user.id === Number(id)) || null;
+      return state.users.find((user) => user.id === Number(id) && (user.status || 'active') === 'active') || null;
     },
 
     listProjects({ search = '', course, semester, nim, page = 1, limit = 12 } = {}) {
@@ -317,15 +318,30 @@ export function createMemoryRepository(initialData = createSeedData()) {
       return clone(state.moderators);
     },
 
-    addModerator(data, actor) {
-      if (state.moderators.some((item) => item.email === data.email.toLowerCase())) return null;
+    addModerator(data, passwordHash, actor) {
+      const email = data.email.toLowerCase();
+      const nip = String(data.nip || '').toUpperCase();
+      if (state.moderators.some((item) => item.email === email || (nip && String(item.nip || '').toUpperCase() === nip))
+        || state.users.some((item) => item.email === email || (nip && String(item.nim || '').toUpperCase() === nip))) return null;
       const moderator = {
         ...clone(data),
         id: nextId(state.moderators),
-        email: data.email.toLowerCase(),
+        email,
         status: 'active'
       };
       state.moderators.push(moderator);
+      state.users.push({
+        id: nextId(state.users),
+        name: data.name,
+        ...(data.nip ? { nim: data.nip, nip: data.nip } : {}),
+        email,
+        passwordHash,
+        role: 'admin',
+        moderatorRole: data.role,
+        roleName: data.role === 'lecturer' ? 'Dosen TRK SV IPB' : 'Admin TRK SV IPB',
+        status: 'active',
+        authVersion: 0
+      });
       recordActivity(`Moderator ${moderator.name} (${moderator.email}) ditambahkan.`, 'user', actor);
       return clone(moderator);
     },
@@ -336,6 +352,8 @@ export function createMemoryRepository(initialData = createSeedData()) {
       const activeCount = state.moderators.filter((item) => item.status === 'active').length;
       if (state.moderators[index].status === 'active' && activeCount <= 1) return { error: 'last_active' };
       state.moderators[index].status = state.moderators[index].status === 'active' ? 'inactive' : 'active';
+      const user = state.users.find((item) => item.role === 'admin' && item.email === state.moderators[index].email);
+      if (user) { user.status = state.moderators[index].status; user.authVersion = (user.authVersion || 0) + 1; }
       recordActivity(`Moderator ${state.moderators[index].name} (${state.moderators[index].email}) ${state.moderators[index].status === 'active' ? 'diaktifkan' : 'dinonaktifkan'}.`, 'user', actor);
       return { moderator: clone(state.moderators[index]) };
     },
@@ -345,6 +363,8 @@ export function createMemoryRepository(initialData = createSeedData()) {
       if (index < 0) return { error: 'not_found' };
       if (state.moderators.length <= 1) return { error: 'last_moderator' };
       const [removed] = state.moderators.splice(index, 1);
+      const userIndex = state.users.findIndex((item) => item.role === 'admin' && item.email === removed.email);
+      if (userIndex >= 0) state.users.splice(userIndex, 1);
       recordActivity(`Moderator ${removed.name} dihapus.`, 'danger', actor);
       return { moderator: clone(removed) };
     },

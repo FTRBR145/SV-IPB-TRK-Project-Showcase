@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import {
   Check,
   Eye,
+  EyeOff,
   Pencil,
   Plus,
   Power,
@@ -18,6 +19,7 @@ import { DialogClose } from '../ui/dialog';
 import { courseLabel } from '../../utils/courseLabel';
 
 const MAX_BULK_SELECTION = 100;
+const EMPTY_MODERATOR_FORM = { name: '', nip: '', email: '', password: '', confirmPassword: '', role: 'admin' };
 
 function SelectionCheckbox({ checked, disabled, onChange, itemLabel }) {
   return (
@@ -638,7 +640,8 @@ export function StudentsPanel({ students, onViewProjects, onUpdate, onDelete, on
 // ============================================================================
 export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', nip: '', email: '', role: 'admin' });
+  const [formData, setFormData] = useState(() => ({ ...EMPTY_MODERATOR_FORM }));
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -650,6 +653,7 @@ export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
       name: formData.name.trim(),
       nip: formData.nip.trim(),
       email: formData.email.trim().toLocaleLowerCase('id-ID'),
+      password: formData.password,
       role: formData.role
     };
     if (normalized.name.length < 3) {
@@ -660,11 +664,19 @@ export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
       setFormError('Masukkan alamat email moderator yang valid.');
       return;
     }
+    if (normalized.password.length < 12) {
+      setFormError('Password moderator minimal 12 karakter.');
+      return;
+    }
+    if (normalized.password !== formData.confirmPassword) {
+      setFormError('Konfirmasi password belum sama.');
+      return;
+    }
     setIsSubmitting(true);
     setFormError('');
     try {
       const added = await onAdd(normalized);
-      if (added) { setFormData({ name: '', nip: '', email: '', role: 'admin' }); setIsAddOpen(false); }
+      if (added) { setFormData({ ...EMPTY_MODERATOR_FORM }); setShowPassword(false); setIsAddOpen(false); }
       else setFormError('Moderator belum ditambahkan. Periksa data atau coba kembali.');
     } catch (error) {
       setFormError(error.message || 'Moderator gagal ditambahkan. Silakan coba kembali.');
@@ -747,7 +759,7 @@ export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
 
   return (
     <div className="min-w-0 space-y-4">
-      <ModalShell isOpen={isAddOpen} onClose={() => { if (!isSubmitting) setIsAddOpen(false); }} ariaLabel="Tambah moderator" panelClassName="max-w-lg max-h-[90dvh] overflow-y-auto rounded-2xl">
+      <ModalShell isOpen={isAddOpen} onClose={() => { if (!isSubmitting) { setIsAddOpen(false); setShowPassword(false); setFormData({ ...EMPTY_MODERATOR_FORM }); setFormError(''); } }} ariaLabel="Tambah moderator" panelClassName="max-w-lg max-h-[90dvh] overflow-y-auto rounded-2xl">
       <DialogClose disabled={isSubmitting} aria-label="Tutup form moderator" className="absolute right-3 top-3 flex min-h-11 min-w-11 items-center justify-center rounded-xl hover:bg-slate-100"><X size={18} /></DialogClose>
       <form onSubmit={submit} className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs" noValidate>
         <div>
@@ -779,6 +791,52 @@ export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
             />
           </label>
         ))}
+        <label className="block text-xs font-bold text-slate-700" htmlFor="moderator-password">
+          Password *
+          <span className="relative mt-1.5 block">
+            <input
+              id="moderator-password"
+              type={showPassword ? 'text' : 'password'}
+              disabled={isSubmitting}
+              minLength={12}
+              maxLength={72}
+              value={formData.password}
+              onChange={(event) => { setFormData((previous) => ({ ...previous, password: event.target.value })); setFormError(''); }}
+              placeholder="Minimal 12 karakter"
+              required
+              autoComplete="new-password"
+              aria-describedby="moderator-password-help"
+              className="min-h-11 w-full rounded-xl border border-slate-200 py-2 pl-3.5 pr-12 text-base focus:outline-none focus:ring-2 focus:ring-sky-500/20 sm:text-xs"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((visible) => !visible)}
+              disabled={isSubmitting}
+              className="absolute inset-y-0 right-0 inline-flex min-w-11 items-center justify-center rounded-r-xl text-slate-500 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-600 disabled:opacity-50"
+              aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
+              aria-pressed={showPassword}
+            >
+              {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+            </button>
+          </span>
+          <span id="moderator-password-help" className="mt-1 block font-normal text-slate-500">Gunakan minimal 12 karakter. Password disimpan dalam bentuk hash.</span>
+        </label>
+        <label className="block text-xs font-bold text-slate-700" htmlFor="moderator-confirm-password">
+          Konfirmasi password *
+          <input
+            id="moderator-confirm-password"
+            type={showPassword ? 'text' : 'password'}
+            disabled={isSubmitting}
+            minLength={12}
+            maxLength={72}
+            value={formData.confirmPassword}
+            onChange={(event) => { setFormData((previous) => ({ ...previous, confirmPassword: event.target.value })); setFormError(''); }}
+            placeholder="Ulangi password"
+            required
+            autoComplete="new-password"
+            className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-base focus:outline-none focus:ring-2 focus:ring-sky-500/20 sm:text-xs"
+          />
+        </label>
         <fieldset disabled={isSubmitting}>
           <legend className="text-xs font-bold text-slate-700">Role *</legend>
           <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1.5">
@@ -808,7 +866,7 @@ export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
             Kelola hak akses moderasi dan manajemen sistem showcase.
           </p>
           </div>
-          <button type="button" onClick={() => { setFormData({ name: '', nip: '', email: '', role: 'admin' }); setFormError(''); setIsAddOpen(true); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"><Plus size={16} /> Tambah Moderator</button>
+          <button type="button" onClick={() => { setFormData({ ...EMPTY_MODERATOR_FORM }); setShowPassword(false); setFormError(''); setIsAddOpen(true); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"><Plus size={16} /> Tambah Moderator</button>
         </div>
 
         <DataTable

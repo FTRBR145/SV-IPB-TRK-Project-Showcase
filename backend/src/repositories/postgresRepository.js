@@ -164,9 +164,11 @@ export function createPostgresRepository(pool) {
     },
     async findUserByEmail(email) { return this.findUserByIdentifier(email); },
     async findUserByIdentifier(identifier) {
-      return unpack((await rows("select * from showcase.users where lower(data->>'email')=$1 or lower(data->>'nim')=$1", [identifier.trim().toLowerCase()]))[0]);
+      return unpack((await rows("select * from showcase.users where (lower(data->>'email')=$1 or lower(data->>'nim')=$1) and coalesce(data->>'status','active')='active'", [identifier.trim().toLowerCase()]))[0]);
     },
-    findUserById: id => find('users', id),
+    async findUserById(id) {
+      return unpack((await rows("select * from showcase.users where id=$1 and coalesce(data->>'status','active')='active'", [asId(id)]))[0]);
+    },
     findProjectById: id => find('projects', id),
     findSubmissionById: id => find('submissions', id),
     async listProjects({ search = '', course, semester, nim, page = 1, limit = 12 } = {}) {
@@ -300,11 +302,25 @@ export function createPostgresRepository(pool) {
       });
     },
     async getModerators() { return (await rows('select * from showcase.moderators order by id')).map(unpack); },
-    addModerator(data, actor) {
+    addModerator(data, passwordHash, actor) {
       return transaction(async client => {
-        const result=await client.query('insert into showcase.moderators(data) values($1) on conflict do nothing returning *',[{...data,email:data.email.toLowerCase(),status:'active'}]);
-        const moderator=unpack(result.rows[0]);
-        if(moderator) await log(client,`Moderator ${moderator.name} (${moderator.email}) ditambahkan.`,'user',actor);
+        const email=data.email.toLowerCase();
+        await client.query('lock table showcase.users, showcase.moderators in share row exclusive mode');
+        const duplicate=(await client.query("select 1 from showcase.users where lower(data->>'email')=$1 or ($2<>'' and upper(data->>'nim')=upper($2)) union all select 1 from showcase.moderators where lower(data->>'email')=$1 or ($2<>'' and upper(data->>'nip')=upper($2)) limit 1",[email,data.nip || ''])).rows[0];
+        if(duplicate) return null;
+        const moderator=unpack((await client.query('insert into showcase.moderators(data) values($1) returning *',[{...data,email,status:'active'}])).rows[0]);
+        await client.query('insert into showcase.users(data) values($1)',[{
+          name:data.name,
+          ...(data.nip ? {nim:data.nip,nip:data.nip} : {}),
+          email,
+          passwordHash,
+          role:'admin',
+          moderatorRole:data.role,
+          roleName:data.role==='lecturer' ? 'Dosen TRK SV IPB' : 'Admin TRK SV IPB',
+          status:'active',
+          authVersion:0
+        }]);
+        await log(client,`Moderator ${moderator.name} (${moderator.email}) ditambahkan.`,'user',actor);
         return moderator;
       });
     },
@@ -312,15 +328,21 @@ export function createPostgresRepository(pool) {
     deleteModerator(id,actor) { return this.changeModerator(id,actor,true); },
     changeModerator(id,actor,remove) {
       return transaction(async client => {
-        await client.query('lock table showcase.moderators in exclusive mode');
+        await client.query('lock table showcase.users, showcase.moderators in share row exclusive mode');
         const moderators=(await client.query('select * from showcase.moderators')).rows;
         const row=moderators.find(item=>item.id===asId(id));
         if(!row) return {error:'not_found'};
         if(remove && moderators.length<=1) return {error:'last_moderator'};
         if(!remove && row.data.status==='active' && moderators.filter(item=>item.data.status==='active').length<=1) return {error:'last_active'};
+        const nextStatus=row.data.status==='active'?'inactive':'active';
         const result=remove
           ? await client.query('delete from showcase.moderators where id=$1 returning *',[row.id])
-          : await client.query('update showcase.moderators set data=data || $2::jsonb where id=$1 returning *',[row.id,{status:row.data.status==='active'?'inactive':'active'}]);
+          : await client.query('update showcase.moderators set data=data || $2::jsonb where id=$1 returning *',[row.id,{status:nextStatus}]);
+        if(remove) {
+          await client.query("delete from showcase.users where lower(data->>'email')=$1 and data->>'role'='admin'",[row.data.email.toLowerCase()]);
+        } else {
+          await client.query("update showcase.users set data=data || jsonb_build_object('status',$2::text,'authVersion',coalesce((data->>'authVersion')::integer,0)+1) where lower(data->>'email')=$1 and data->>'role'='admin'",[row.data.email.toLowerCase(),nextStatus]);
+        }
         await log(client,remove?`Moderator ${row.data.name} dihapus.`:`Moderator ${row.data.name} (${row.data.email}) ${row.data.status === 'active' ? 'dinonaktifkan' : 'diaktifkan'}.`,'user',actor);
         return {moderator:unpack(result.rows[0])};
       });

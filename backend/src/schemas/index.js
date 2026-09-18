@@ -50,8 +50,9 @@ export const moderatorSchema = z.object({
   role: z.enum(['admin', 'lecturer']).default('admin'),
   name: z.string().trim().min(3).max(120),
   nip: z.string().trim().max(40).optional().default(''),
-  email: z.email().transform((value) => value.toLowerCase())
-});
+  email: z.email().transform((value) => value.toLowerCase()),
+  password: z.string().min(12).max(72).refine(value => Buffer.byteLength(value, 'utf8') <= 72, 'Password maksimal 72 byte.')
+}).strict();
 
 export const studentSchema = z.object({
   name: z.string().trim().min(2).max(120),

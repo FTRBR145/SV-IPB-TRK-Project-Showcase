@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { courseSchema, moderatorSchema, settingsSchema } from '../schemas/index.js';
@@ -50,8 +51,13 @@ router.get('/moderators', async (request, response) => {
 });
 
 router.post('/moderators', validate(moderatorSchema), async (request, response) => {
-  const moderator = await request.app.locals.repository.addModerator(request.body, request.user);
-  if (!moderator) throw new ApiError(409, 'MODERATOR_EXISTS', 'Email moderator sudah terdaftar.');
+  const { password, ...profile } = request.body;
+  const moderator = await request.app.locals.repository.addModerator(
+    profile,
+    await bcrypt.hash(password, 12),
+    request.user
+  );
+  if (!moderator) throw new ApiError(409, 'MODERATOR_EXISTS', 'Email moderator sudah terdaftar sebagai akun pengguna atau moderator.');
   sendData(response, moderator, 201);
 });
 
