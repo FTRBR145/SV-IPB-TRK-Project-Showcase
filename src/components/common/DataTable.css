@@ -98,6 +98,10 @@
 .table-cell-label { display: none; }
 .table-cell-value > div { max-width: 100%; }
 .table-cell-value .flex { flex-wrap: wrap; }
+.table-cell-value .table-action-group {
+  min-width: max-content;
+  flex-wrap: nowrap;
+}
 .table-cell-value button { flex-shrink: 0; max-width: 100%; }
 .admin-datatable .dt-info { color: var(--ui-muted); font-size: 0.75rem; }
 .admin-datatable .dt-paging nav {

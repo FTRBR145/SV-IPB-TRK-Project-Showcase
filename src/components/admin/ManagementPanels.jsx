@@ -218,7 +218,7 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
       headerClassName: 'text-center',
       className: 'text-center',
       render: (row) => (
-        <div className="flex items-center justify-center gap-1.5">
+        <div className="table-action-group flex items-center justify-center gap-1.5">
           <button
             type="button"
             onClick={() => onView(row)}
@@ -504,7 +504,7 @@ export function StudentsPanel({ students, onViewProjects, onUpdate, onDelete, on
       headerClassName: 'text-center',
       className: 'text-center',
       render: (row) => (
-        <div className="flex items-center justify-center gap-1.5">
+        <div className="table-action-group flex items-center justify-center gap-1.5">
           <button
             type="button"
             onClick={() => onViewProjects(row.nim)}
@@ -721,7 +721,7 @@ export function ModeratorsPanel({ moderators, onAdd, onToggle, onDelete }) {
       headerClassName: 'text-center',
       className: 'text-center',
       render: (row) => (
-        <div className="flex items-center justify-center gap-1.5">
+        <div className="table-action-group flex items-center justify-center gap-1.5">
           <button
             type="button"
             onClick={() => onToggle(row.id)}
