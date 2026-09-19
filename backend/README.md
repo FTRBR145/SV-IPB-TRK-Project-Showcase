@@ -1,6 +1,6 @@
 # Backend Showcase Projek TRK
 
-REST API untuk landing showcase, portal mahasiswa, dan dashboard admin. Penyimpanan default memakai **Supabase/PostgreSQL** melalui pool koneksi `pg`. Data, pengajuan, pengaturan, moderator, dan log aktivitas bertahan setelah restart. Login JWT yang sudah ada tetap ditangani Express; migrasi ini tidak mengganti login dengan Supabase Auth.
+REST API untuk landing showcase, portal mahasiswa, dan dashboard admin. Penyimpanan default memakai **Supabase/PostgreSQL** melalui pool koneksi `pg`. Data, pengajuan, pengaturan, moderator, dan log aktivitas bertahan setelah restart. Login JWT tetap ditangani Express dan disimpan dalam cookie HttpOnly; aplikasi ini tidak memakai Supabase Auth.
 
 ## Menjalankan backend
 
@@ -46,7 +46,8 @@ Ubah semua kredensial dan `JWT_SECRET` melalui `.env` sebelum deployment.
 | Method | Endpoint | Akses | Fungsi |
 |---|---|---|---|
 | `GET` | `/api/health` | Publik | Status server |
-| `POST` | `/api/auth/login` | Publik | Mendapatkan JWT memakai email, NIM, atau NIP |
+| `POST` | `/api/auth/login` | Publik | Membuat sesi cookie HttpOnly memakai email, NIM, atau NIP |
+| `POST` | `/api/auth/logout` | Login/Publik | Menghapus cookie sesi, termasuk cookie kedaluwarsa/tidak valid |
 | `GET` | `/api/auth/me` | Login | Profil pengguna aktif |
 | `GET` | `/api/projects` | Publik | Daftar, pencarian, filter, pagination projek |
 | `GET` | `/api/projects/:id` | Publik | Detail projek |
@@ -64,11 +65,9 @@ Ubah semua kredensial dan `JWT_SECRET` melalui `.env` sebelum deployment.
 | `GET/DELETE` | `/api/activity-logs` | Admin | Log aktivitas |
 | `POST` | `/api/system/reset` | Admin | Reset seed pada mode memory saja; Postgres menolak |
 
-Kirim JWT melalui header:
+Browser harus mengirim request dengan kredensial agar cookie sesi ikut terkirim. Cookie memakai `HttpOnly`, `SameSite=Lax`, `Secure` di production, dan tidak pernah dikembalikan di body respons login. `AUTH_COOKIE_MAX_AGE_MS` sebaiknya disamakan dengan `JWT_EXPIRES_IN`.
 
-```http
-Authorization: Bearer <access-token>
-```
+Percobaan login gagal dibatasi per kombinasi alamat IP/akun dan per alamat IP. Batas dalam proses mencegah brute force dasar; deployment multi-instance sebaiknya menambahkan kebijakan global yang sama di Vercel Firewall.
 
 ## Format respons
 

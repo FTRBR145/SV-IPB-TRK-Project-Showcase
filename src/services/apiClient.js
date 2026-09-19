@@ -1,5 +1,4 @@
 const API_BASE_URL = (import.meta.env?.VITE_API_URL || '/api').replace(/\/$/, '');
-const ACCESS_TOKEN_KEY = 'trk_showcase_access_token';
 const REQUEST_TIMEOUT_MS = 15000;
 
 export class ApiClientError extends Error {
@@ -9,23 +8,6 @@ export class ApiClientError extends Error {
     this.status = status;
     this.code = code;
     this.details = details;
-  }
-}
-
-export function getAccessToken() {
-  try {
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
-  } catch {
-    return null;
-  }
-}
-
-export function setAccessToken(token) {
-  try {
-    if (token) localStorage.setItem(ACCESS_TOKEN_KEY, token);
-    else localStorage.removeItem(ACCESS_TOKEN_KEY);
-  } catch {
-    // The active session still works until refresh if browser storage is unavailable.
   }
 }
 
@@ -58,7 +40,7 @@ function waitForDatabase(signal) {
 }
 
 async function requestOnce(path, options = {}) {
-  const { method = 'GET', body, token = getAccessToken(), signal, timeout = REQUEST_TIMEOUT_MS, includeMeta = false } = options;
+  const { method = 'GET', body, signal, timeout = REQUEST_TIMEOUT_MS, includeMeta = false } = options;
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeout);
   const abortFromCaller = () => controller.abort();
@@ -70,10 +52,10 @@ async function requestOnce(path, options = {}) {
       method,
       headers: {
         Accept: 'application/json',
-        ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
+        ...(body !== undefined ? { 'Content-Type': 'application/json' } : {})
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      credentials: 'include',
       signal: controller.signal
     });
 

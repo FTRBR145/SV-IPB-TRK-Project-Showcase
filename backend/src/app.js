@@ -4,12 +4,14 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { env } from './config/env.js';
 import { errorHandler, notFound } from './middleware/errors.js';
+import { loginRateLimit } from './middleware/rateLimit.js';
 import apiRoutes from './routes/index.js';
 
-export function createApp({ repository } = {}) {
+export function createApp({ repository, loginLimiter = loginRateLimit() } = {}) {
   if (!repository) throw new Error('Repository wajib diberikan saat membuat API.');
   const app = express();
   app.disable('x-powered-by');
+  app.set('trust proxy', 1);
   app.locals.repository = repository;
 
   app.use(helmet());
@@ -24,6 +26,7 @@ export function createApp({ repository } = {}) {
   }));
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+  app.use('/api/auth/login', loginLimiter);
   if (env.nodeEnv !== 'test') app.use(morgan('dev'));
 
   app.get('/', (_request, response) => {

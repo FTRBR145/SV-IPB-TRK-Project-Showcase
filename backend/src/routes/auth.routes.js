@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, bestEffortAuthenticate } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { loginSchema, profileSchema, passwordSchema } from '../schemas/index.js';
 import { ApiError, asyncHandler, sendData } from '../utils/http.js';
@@ -12,6 +12,16 @@ const router = Router();
 function publicUser(user) {
   const { passwordHash: _passwordHash, authVersion: _authVersion, ...safeUser } = user;
   return safeUser;
+}
+
+function sessionCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: env.nodeEnv === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: env.cookieMaxAgeMs
+  };
 }
 
 router.post('/login', validate(loginSchema), asyncHandler(async (request, response) => {
@@ -27,18 +37,22 @@ router.post('/login', validate(loginSchema), asyncHandler(async (request, respon
     env.jwtSecret,
     { subject: String(user.id), expiresIn: env.jwtExpiresIn }
   );
+  response.cookie(env.cookieName, accessToken, sessionCookieOptions());
 
   if (user.role === 'admin') {
     await request.app.locals.repository.recordActivity('Admin berhasil login.', 'login', user);
   }
   response.set('Cache-Control', 'no-store');
-  sendData(response, { accessToken, tokenType: 'Bearer', user: publicUser(user) });
+  sendData(response, { user: publicUser(user) });
 }));
 
-router.post('/logout', authenticate, asyncHandler(async (request, response) => {
-  if (request.user.role === 'admin') {
+router.post('/logout', bestEffortAuthenticate, asyncHandler(async (request, response) => {
+  if (request.user?.role === 'admin') {
     await request.app.locals.repository.recordActivity('Admin logout.', 'logout', request.user);
   }
+  const { maxAge: _maxAge, ...clearOptions } = sessionCookieOptions();
+  response.clearCookie(env.cookieName, clearOptions);
+  response.set('Cache-Control', 'no-store');
   sendData(response, { loggedOut: true });
 }));
 

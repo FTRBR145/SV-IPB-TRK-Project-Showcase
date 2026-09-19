@@ -6,6 +6,7 @@ export function notFound(request, _response, next) {
 }
 
 export function errorHandler(error, _request, response, _next) {
+  if (error.code === 'LOGIN_RATE_LIMITED') response.set('Retry-After', String(error.details?.retryAfter || 900));
   if (!(error instanceof ApiError) && isDatabaseUnavailable(error)) {
     response.set('Retry-After', '5');
     error = new ApiError(503, 'DATABASE_UNAVAILABLE', 'Koneksi database sementara tidak tersedia. Tunggu beberapa saat lalu coba kembali.');

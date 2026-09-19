@@ -10,9 +10,14 @@ if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
 }
 
 const jwtSecret = process.env.JWT_SECRET || 'development-only-secret-change-before-production';
+const cookieMaxAgeMs = Number.parseInt(process.env.AUTH_COOKIE_MAX_AGE_MS || String(8 * 60 * 60 * 1000), 10);
 
-if (process.env.NODE_ENV === 'production' && jwtSecret.length < 32) {
-  throw new Error('JWT_SECRET production wajib memiliki minimal 32 karakter.');
+if (process.env.NODE_ENV === 'production' && (jwtSecret === 'development-only-secret-change-before-production' || jwtSecret.length < 32)) {
+  throw new Error('JWT_SECRET production wajib diisi dan memiliki minimal 32 karakter.');
+}
+
+if (!Number.isInteger(cookieMaxAgeMs) || cookieMaxAgeMs < 1) {
+  throw new Error('AUTH_COOKIE_MAX_AGE_MS wajib berupa angka positif.');
 }
 
 export const env = Object.freeze({
@@ -28,6 +33,8 @@ export const env = Object.freeze({
     .filter(Boolean),
   jwtSecret,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
+  cookieName: process.env.AUTH_COOKIE_NAME || (process.env.NODE_ENV === 'production' ? '__Host-trk_session' : 'trk_session'),
+  cookieMaxAgeMs,
   adminEmail: process.env.ADMIN_EMAIL || 'admin.trk@apps.ipb.ac.id',
   adminPassword: process.env.ADMIN_PASSWORD || 'AdminTRK123!',
   studentEmail: process.env.STUDENT_EMAIL || 'nabila.putri@apps.ipb.ac.id',

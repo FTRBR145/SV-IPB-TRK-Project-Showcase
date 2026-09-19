@@ -6,12 +6,11 @@ import {
 import { SV_COURSES } from '../data/projectsData';
 import {
   ApiClientError,
-  apiRequest,
-  getAccessToken,
-  setAccessToken
+  apiRequest
 } from '../services/apiClient';
 import AppContext from './AppContextStore';
 import { loadProjectCatalog } from '../services/projectApi';
+import { restoreCookieSession } from '../services/sessionApi';
 
 const DEFAULT_COURSES = SV_COURSES.filter((course) => course !== 'Semua Mata Kuliah');
 
@@ -97,7 +96,6 @@ export function AppProvider({ children }) {
   }, []);
 
   const endSession = useCallback(() => {
-    setAccessToken(null);
     setCurrentUser(null);
     setSubmissions([]);
     setStudentAccounts([]);
@@ -125,24 +123,16 @@ export function AppProvider({ children }) {
         }
       }
 
-      const storedToken = getAccessToken();
-      if (storedToken && active) {
-        try {
-          const user = await apiRequest('/auth/me', { signal: controller.signal });
-          if (active) {
-            setCurrentUser(user);
-            await loadPrivateData(user.role, controller.signal);
-          }
-        } catch (error) {
-          if (active) {
-            endSession();
-            showToast(
-              error.status === 401
-                ? 'Sesi telah berakhir. Silakan masuk kembali.'
-                : error.message,
-              'error'
-            );
-          }
+      try {
+        const user = await restoreCookieSession({ signal: controller.signal });
+        if (active && user) {
+          setCurrentUser(user);
+          await loadPrivateData(user.role, controller.signal);
+        }
+      } catch (error) {
+        if (active) {
+          endSession();
+          showToast(error.message, 'error');
         }
       }
 
@@ -160,16 +150,17 @@ export function AppProvider({ children }) {
   }, [endSession, loadPrivateData, loadPublicData, showToast]);
 
   const loginForRole = async (expectedRole, credentials) => {
+    let sessionCreated = false;
     setIsLoading(true);
     try {
       const session = await apiRequest('/auth/login', {
         method: 'POST',
-        token: null,
         body: {
           identifier: credentials.username.trim(),
           password: credentials.password
         }
       });
+      sessionCreated = true;
       if (session.user.role !== expectedRole) {
         throw new ApiClientError(
           expectedRole === 'admin'
@@ -178,12 +169,18 @@ export function AppProvider({ children }) {
           { status: 403, code: 'ROLE_MISMATCH' }
         );
       }
-      setAccessToken(session.accessToken);
       setCurrentUser(session.user);
       await Promise.all([loadPublicData(), loadPrivateData(session.user.role)]);
       showToast(`Selamat datang, ${session.user.name}!`);
       return session.user;
     } catch (error) {
+      if (sessionCreated) {
+        try {
+          await apiRequest('/auth/logout', { method: 'POST', timeout: 5000 });
+        } catch {
+          // Preserve the original login error; local auth state is still cleared below.
+        }
+      }
       endSession();
       throw error;
     } finally {
