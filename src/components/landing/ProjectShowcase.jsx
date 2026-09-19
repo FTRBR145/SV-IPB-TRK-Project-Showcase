@@ -30,7 +30,7 @@ export default function ProjectShowcase({
             <p
               className="text-slate-600 text-sm mt-1"
             >
-              Karya teknik komputer, IoT, sistem tertanam & jaringan mahasiswa TRK SV IPB.
+              Karya mahasiswa Program Studi Teknologi Rekayasa Komputer Sekolah Vokasi IPB.
             </p>
           </div>
           <button

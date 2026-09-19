@@ -15,7 +15,7 @@ export default function AboutSection() {
             <p
               className="text-slate-600 text-sm sm:text-base leading-relaxed"
             >
-              Ruang digital bagi mahasiswa Teknik Komputer / Teknologi Rekayasa Komputer (TRK) Sekolah Vokasi IPB University untuk memamerkan sistem IoT, mikrokontroler, jaringan komputer, dan sistem tertanam terbaik. Tempat mengeksplorasi karya praktikum dan projek akhir mahasiswa TRK secara interaktif.
+              Ruang digital bagi mahasiswa Teknologi Rekayasa Komputer (TRK) Sekolah Vokasi IPB University untuk mempublikasikan berbagai produk hasil pembelajaran mata kuliah dan proyek akhir. Tempat mengeksplorasi karya praktikum dan proyek akhir mahasiswa TRK secara interaktif.
             </p>
           </div>
           <div
