@@ -61,7 +61,7 @@ export default function HeroSection({ onOpenUpload, onNavigateToStudent }) {
       <div className="landing-container hero-layout">
         <div className="hero-copy">
           <h1>Teknologi Rekayasa Komputer<br />Project Showcase</h1>
-          <p>Platform showcase video projek akhir dan praktikum sistem tertanam mahasiswa Teknologi Rekayasa Komputer (TRK) Sekolah Vokasi IPB University. Menampilkan inovasi IoT, mikrokontroler, jaringan komputer, dan cloud.</p>
+          <p>Platform showcase video project mata kuliah Program Studi Teknologi Rekayasa Komputer (TRK) Sekolah Vokasi IPB University. Menampilkan berbagai produk inovasi sistem cerdas berbasis komputer modern, Internet of Things (IoT), robotik, dan kecerdasan buatan.</p>
           <div className="hero-actions">
             <button type="button" className="landing-primary" onClick={onNavigateToStudent}>
               Lihat Semua Projek <ArrowRight size={18} />
