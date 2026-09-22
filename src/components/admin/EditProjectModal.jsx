@@ -9,7 +9,14 @@ import { getYouTubeThumbnail } from '../../data/projectsData';
 
 const fieldClass = 'w-full min-h-11 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-sm text-slate-800 transition-colors focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600';
 
-export default function EditProjectModal({ project, onClose }) {
+export default function EditProjectModal({
+  project,
+  onClose,
+  onSave,
+  title = 'Edit Projek',
+  description = 'Perbarui informasi projek yang sudah dipublikasikan.',
+  submitLabel = 'Simpan Perubahan'
+}) {
   const { courses, updateProject } = useApp();
   const [formData, setFormData] = useState({
     title: project.title,
@@ -42,7 +49,7 @@ export default function EditProjectModal({ project, onClose }) {
     setIsSubmitting(true);
     setFormError('');
     const { techStackStr, ...projectUpdates } = formData;
-    const updated = await updateProject(project.id, {
+    const updated = await (onSave || updateProject)(project.id, {
       ...projectUpdates,
       videoUrl: normalizeProjectVideo(formData.videoUrl),
       ...(formData.videoUrl !== project.videoUrl ? { thumbnail: getYouTubeThumbnail(normalizeProjectVideo(formData.videoUrl)) } : {}),
@@ -67,8 +74,8 @@ export default function EditProjectModal({ project, onClose }) {
         </DialogClose>
 
         <div className="mb-6 pr-8">
-          <h2 className="font-heading text-xl font-extrabold text-slate-900">Edit Projek</h2>
-          <p className="text-xs text-slate-500 mt-1">Perbarui informasi projek yang sudah dipublikasikan.</p>
+          <h2 className="font-heading text-xl font-extrabold text-slate-900">{title}</h2>
+          <p className="text-xs text-slate-500 mt-1">{description}</p>
         </div>
 
         <ValidatedForm onSubmit={submit} className="space-y-4">
@@ -205,7 +212,7 @@ export default function EditProjectModal({ project, onClose }) {
               disabled={isSubmitting}
               className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
             >
-              <Save size={16} /> {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+              <Save size={16} /> {isSubmitting ? 'Menyimpan...' : submitLabel}
             </button>
           </div>
         </ValidatedForm>

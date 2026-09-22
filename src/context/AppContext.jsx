@@ -331,6 +331,20 @@ export function AppProvider({ children }) {
     }
   };
 
+  const updateSubmission = async (submissionId, updates) => {
+    try {
+      const submission = await apiRequest(`/submissions/${submissionId}`, {
+        method: 'PATCH',
+        body: updates
+      });
+      setSubmissions((previous) => previous.map((item) => item.id === submission.id ? submission : item));
+      showToast('Perubahan pengajuan berhasil disimpan dan tetap menunggu persetujuan.', 'success');
+      return submission;
+    } catch (error) {
+      return reportApiError(error, 'Perubahan pengajuan gagal disimpan.');
+    }
+  };
+
   const deleteProjects = async (projectIds) => {
     try {
       const result = await apiRequest('/projects/bulk-delete', { method: 'POST', body: { ids: projectIds } });
@@ -481,6 +495,7 @@ export function AppProvider({ children }) {
       logout,
       addProject,
       updateProject,
+      updateSubmission,
       deleteProject,
       deleteProjects,
       approveSubmission,

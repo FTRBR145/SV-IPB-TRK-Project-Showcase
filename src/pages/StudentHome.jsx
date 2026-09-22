@@ -10,6 +10,7 @@ import { courseLabel } from '../utils/courseLabel';
 import '../student.css';
 import ProjectDetailModal from '../components/modals/ProjectDetailModal';
 import StudentSidebar from '../components/student/StudentSidebar';
+import EditProjectModal from '../components/admin/EditProjectModal';
 import useApp from '../hooks/useApp';
 import useProjectDetail from '../hooks/useProjectDetail';
 
@@ -34,7 +35,7 @@ function belongsToStudent(project, student) {
 export default function StudentHome() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { projects, submissions, currentUser, isLoggedIn, logout, courses, showToast } = useApp();
+  const { projects, submissions, currentUser, isLoggedIn, logout, courses, showToast, updateSubmission } = useApp();
   const isAdminPreview = isAdminAccount(currentUser);
   const studentUser = isStudentAccount(currentUser) ? currentUser : null;
 
@@ -42,6 +43,7 @@ export default function StudentHome() {
   const searchQuery = searchParams.get('search') || '';
   const publishedDetail = useProjectDetail(searchParams.get('project'), showToast);
   const [visibleProjectCount, setVisibleProjectCount] = useState(PAGE_SIZE);
+  const [editingSubmission, setEditingSubmission] = useState(null);
 
   // URL jadi sumber kebenaran tab & kategori, bukan state lokal.
   const activeTab = !isAdminPreview && searchParams.get('tab') === 'my-projects' ? 'my-projects' : 'home';
@@ -204,7 +206,13 @@ export default function StudentHome() {
                 </button>
               </section>
             ) : <div className="student-project-grid">{visibleProjects.map(project =>
-              <StudentProjectCard key={`${project.status || 'published'}-${project.id}`} project={project} isOwner={belongsToStudent(project, studentUser)} onOpen={handleOpenDetail} />
+              <StudentProjectCard
+                key={`${project.status || 'published'}-${project.id}`}
+                project={project}
+                isOwner={belongsToStudent(project, studentUser)}
+                onOpen={handleOpenDetail}
+                onEdit={project.isPending ? setEditingSubmission : undefined}
+              />
             )}</div>}
             {remainingProjectCount > 0 && <div className="student-load-more"><button type="button" onClick={() => setVisibleProjectCount(count => count + PAGE_SIZE)}>
               Tampilkan {Math.min(PAGE_SIZE, remainingProjectCount)} projek berikutnya <span>({remainingProjectCount} tersisa)</span>
@@ -214,6 +222,17 @@ export default function StudentHome() {
         <Footer />
       </div>
       {activeDetailProject && <ProjectDetailModal project={activeDetailProject} onClose={handleCloseDetail} />}
+      {editingSubmission && (
+        <EditProjectModal
+          key={editingSubmission.id}
+          project={editingSubmission}
+          onClose={() => setEditingSubmission(null)}
+          onSave={updateSubmission}
+          title="Edit Pengajuan"
+          description="Perbarui informasi projek sebelum ditinjau admin. Statusnya tetap menunggu persetujuan."
+          submitLabel="Simpan Pengajuan"
+        />
+      )}
     </div>
   );
 }

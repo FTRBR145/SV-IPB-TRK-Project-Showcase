@@ -237,6 +237,22 @@ export function createPostgresRepository(pool) {
       }
       return (await rows(`select * from showcase.submissions ${filters.length ? 'where '+filters.join(' and ') : ''} order by id desc`,values)).map(unpack);
     },
+    updateSubmission(id, updates, ownerNim, actor) {
+      return transaction(async client => {
+        const row = (await client.query(
+          'select * from showcase.submissions where id=$1 for update',
+          [asId(id)]
+        )).rows[0];
+        if (!row || String(row.data.nim) !== String(ownerNim)) return { error: 'not_found' };
+        if (row.data.status !== 'pending') return { error: 'invalid_status' };
+        const submission = unpack((await client.query(
+          'update showcase.submissions set data=data || $2::jsonb where id=$1 returning *',
+          [row.id, { ...updates, updatedAt: now() }]
+        )).rows[0]);
+        await log(client, `Pengajuan “${submission.title}” diperbarui oleh mahasiswa.`, 'submission', actor);
+        return { submission };
+      });
+    },
     approveSubmission(id, actor) {
       return transaction(async client => {
         const row = (await client.query('select * from showcase.submissions where id=$1 for update', [asId(id)])).rows[0];

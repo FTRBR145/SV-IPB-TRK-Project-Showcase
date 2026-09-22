@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowUpRight, Clock, Play, ImageOff } from 'lucide-react';
+import { ArrowUpRight, Clock, Play, ImageOff, Pencil } from 'lucide-react';
 import { getYouTubeThumbnail } from '../../data/projectsData';
 import { courseLabel } from '../../utils/courseLabel';
 import { isUnavailableThumbnail } from '../../utils/studentFeed';
@@ -27,7 +27,7 @@ function ProjectCover({ src, automatic, project }) {
   );
 }
 
-export default function StudentProjectCard({ project, isOwner, onOpen }) {
+export default function StudentProjectCard({ project, isOwner, onOpen, onEdit }) {
   const src = project.thumbnail || getYouTubeThumbnail(project.videoUrl);
   const pending = project.status === 'pending';
   return (
@@ -42,9 +42,19 @@ export default function StudentProjectCard({ project, isOwner, onOpen }) {
           <p className="student-project-author">{project.student}</p>
           <p className="student-project-course">{courseLabel(project.course)}</p>
           {project.techStack?.length > 0 && <p className="student-project-stack">{project.techStack.slice(0, 3).join(' / ')}</p>}
-          <div className="student-project-bottom"><span>{project.date || project.year}</span><span>Lihat projek <ArrowUpRight size={16} aria-hidden="true" /></span></div>
         </div>
       </button>
+      <div className="student-project-actions">
+        <span>{project.date || project.year}</span>
+        <div>
+          <button type="button" onClick={() => onOpen(project)}>Lihat projek <ArrowUpRight size={16} aria-hidden="true" /></button>
+          {pending && isOwner && onEdit && (
+            <button type="button" className="student-edit-project" onClick={() => onEdit(project)}>
+              <Pencil size={15} aria-hidden="true" /> Edit pengajuan
+            </button>
+          )}
+        </div>
+      </div>
     </article>
   );
 }

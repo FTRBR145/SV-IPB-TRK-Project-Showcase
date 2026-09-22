@@ -37,6 +37,21 @@ export const projectUpdateSchema = projectSchema
   .partial()
   .refine((value) => Object.keys(value).length > 0, 'Minimal satu perubahan wajib dikirim.');
 
+export const submissionUpdateSchema = projectSchema
+  .pick({
+    title: true,
+    course: true,
+    category: true,
+    semester: true,
+    techStack: true,
+    videoUrl: true,
+    thumbnail: true,
+    supervisor: true,
+    description: true
+  })
+  .partial()
+  .refine((value) => Object.keys(value).length > 0, 'Minimal satu perubahan wajib dikirim.');
+
 export const bulkDeleteSchema = z.object({
   ids: z.array(z.coerce.number().int().positive()).min(1).max(100)
     .transform((ids) => [...new Set(ids)])

@@ -16,8 +16,8 @@
 .student-filter-chips button { display: flex; align-items: center; gap: 8px; max-width: 100%; overflow-wrap: anywhere; min-height: 44px; padding: 8px 12px; border: 1px solid #bcd9e5; border-radius: 8px; background: #f0f8fb; color: #16566e; font-size: 13px; text-align: left; }
 .student-filter-chips svg { flex-shrink: 0; }
 .student-project-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 28px 24px; }
-.student-project { min-width: 0; border: 1px solid #dde2e8; border-radius: 12px; overflow: hidden; }
-.student-project-link { display: flex; flex-direction: column; width: 100%; height: 100%; text-align: left; background: white; }
+.student-project { display: flex; min-width: 0; flex-direction: column; border: 1px solid #dde2e8; border-radius: 12px; overflow: hidden; background: white; }
+.student-project-link { display: flex; flex: 1; flex-direction: column; width: 100%; text-align: left; background: white; }
 .student-project:focus-within { outline: 2px solid #087eaf; outline-offset: 3px; }
 .student-project:hover { border-color: #93a5b7; }
 .student-cover { position: relative; aspect-ratio: 16/9; width: 100%; overflow: hidden; background: #eef2f5; }
@@ -33,9 +33,12 @@
 .student-project-author { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
 .student-project-course { font-size: 13px; color: #586477; line-height: 1.5; }
 .student-project-stack { font-size: 12px; color: #52647a; margin-top: 10px; }
-.student-project-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; border-top: 1px solid #edf0f3; margin-top: auto; padding-top: 14px; font-size: 12px; color: #586477; }
-.student-project-stack + .student-project-bottom, .student-project-course + .student-project-bottom { margin-top: 18px; }
-.student-project-bottom span:last-child { display: inline-flex; align-items: center; gap: 5px; color: #00668c; font-weight: 600; }
+.student-project-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; border-top: 1px solid #edf0f3; padding: 12px 18px; font-size: 12px; color: #586477; }
+.student-project-actions > div { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.student-project-actions button { display: inline-flex; min-height: 36px; align-items: center; gap: 5px; border-radius: 8px; padding: 7px 9px; color: #00668c; font-weight: 650; }
+.student-project-actions button:hover { background: #f0f8fb; }
+.student-project-actions .student-edit-project { border: 1px solid #cbd2da; color: #27364a; }
+.student-project-actions .student-edit-project:hover { border-color: #93a5b7; background: #f5f7f9; }
 .student-pending-note { display: flex; gap: 10px; padding: 12px 14px; background: #fff9ed; color: #795013; border-radius: 8px; margin-bottom: 20px; font-size: 13px; line-height: 1.6; }
 .student-pending-note svg { flex-shrink: 0; margin-top: 2px; }
 .student-empty { padding: 48px 20px; text-align: center; border: 1px dashed #cbd2da; border-radius: 12px; }

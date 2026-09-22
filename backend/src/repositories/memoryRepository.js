@@ -212,6 +212,25 @@ export function createMemoryRepository(initialData = createSeedData()) {
       return submission ? clone(submission) : null;
     },
 
+    updateSubmission(id, updates, ownerNim, actor) {
+      const index = state.submissions.findIndex((item) => item.id === Number(id));
+      if (index < 0 || String(state.submissions[index].nim) !== String(ownerNim)) {
+        return { error: 'not_found' };
+      }
+      if (state.submissions[index].status !== 'pending') return { error: 'invalid_status' };
+      state.submissions[index] = {
+        ...state.submissions[index],
+        ...clone(updates),
+        id: state.submissions[index].id,
+        student: state.submissions[index].student,
+        nim: state.submissions[index].nim,
+        status: 'pending',
+        updatedAt: new Date().toISOString()
+      };
+      recordActivity(`Pengajuan “${state.submissions[index].title}” diperbarui oleh mahasiswa.`, 'submission', actor);
+      return { submission: clone(state.submissions[index]) };
+    },
+
     approveSubmission(id, actor) {
       const index = state.submissions.findIndex((item) => item.id === Number(id));
       if (index < 0) return { error: 'not_found' };
