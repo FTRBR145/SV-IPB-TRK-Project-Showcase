@@ -16,6 +16,9 @@
 .project-detail-video-empty { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0.75rem; color: #cbd5e1; font-size: 0.875rem; }
 .project-detail-modal h3 { margin: 0 0 1rem; font-size: 0.9375rem; font-weight: 700; line-height: 1.5; }
 .project-detail-description { margin-top: 1.75rem; }
+.project-detail-description a { color: #0369a1; text-decoration: underline; text-underline-offset: 0.2em; }
+.project-detail-description a:hover { color: #075985; }
+.project-detail-description a:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; border-radius: 2px; }
 .project-detail-description p { font-size: 0.875rem; line-height: 1.8; color: var(--ui-muted); white-space: pre-wrap; overflow-wrap: anywhere; }
 .project-detail-info { border-left: 1px solid var(--ui-border); padding-left: 2rem; }
 .project-detail-facts { display: grid; gap: 1.25rem; margin: 0; }

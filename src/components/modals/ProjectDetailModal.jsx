@@ -4,6 +4,7 @@ import ModalShell from '../common/ModalShell';
 import { DialogClose } from '../ui/dialog';
 import { getYouTubeEmbedUrl } from '../../data/projectsData';
 import { courseLabel } from '../../utils/courseLabel';
+import { descriptionLinks } from '../../utils/descriptionLinks';
 import './ProjectDetailModal.css';
 
 export default function ProjectDetailModal({ project, onClose }) {
@@ -39,7 +40,9 @@ export default function ProjectDetailModal({ project, onClose }) {
             </div>
             <section className="project-detail-description" aria-label="Deskripsi projek">
               <h3>Tentang projek</h3>
-              <p>{project.description || project.desc || 'Deskripsi projek belum dicantumkan.'}</p>
+              <p>{descriptionLinks(project.description || project.desc || 'Deskripsi projek belum dicantumkan.').map((part, index) => part.href
+                ? <a key={index} href={part.href} target="_blank" rel="noopener noreferrer" title="Buka tautan di tab baru">{part.text}</a>
+                : <React.Fragment key={index}>{part.text}</React.Fragment>)}</p>
             </section>
           </div>
           <aside className="project-detail-info" aria-label="Informasi projek">
