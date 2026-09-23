@@ -99,8 +99,47 @@
 .table-cell-value > div { max-width: 100%; }
 .table-cell-value .flex { flex-wrap: wrap; }
 .table-cell-value .table-action-group {
+  display: flex;
   min-width: max-content;
   flex-wrap: nowrap;
+  gap: 0.375rem;
+  align-items: center;
+}
+.table-cell-value .table-action-group button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.375rem;
+  background: var(--ui-surface);
+  box-shadow: none;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+.table-cell-value .table-action-group button:hover:not(:disabled) {
+  background: var(--ui-canvas);
+  border-color: currentColor;
+}
+.table-cell-value .table-action-group button:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+.table-action-group button svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+@media (pointer: coarse) {
+  .table-cell-value .table-action-group button {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
 }
 .table-cell-value button { flex-shrink: 0; max-width: 100%; }
 .admin-datatable .dt-info { color: var(--ui-muted); font-size: 0.75rem; }

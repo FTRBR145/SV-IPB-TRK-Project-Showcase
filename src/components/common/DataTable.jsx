@@ -62,14 +62,17 @@ export default function DataTable({
 
   const dataTableColumns = useMemo(() => {
     const weights = columns.map(column => column.weight || ({ title: 2.4, course: 1.8, student: 1.6, name: 1.8, email: 1.8, actions: 1.3 }[column.key] || 1));
-    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    const hasActions = columns.some(column => column.key === 'actions');
+    const totalWeight = weights.reduce((sum, weight, index) => sum + (columns[index].key === 'actions' ? 0 : weight), 0);
     return columns.map((column, index) => ({
       data: column.key || null,
       name: column.key || `column-${index}`,
       orderable: column.sortable !== false && Boolean(column.key),
       searchable: column.searchable !== false && Boolean(column.key),
       className: column.className || '',
-      width: `${weights[index] / totalWeight * 100}%`,
+      width: column.key === 'actions' ? '10rem' : hasActions
+        ? `calc((100% - 10rem) * ${weights[index] / totalWeight})`
+        : `${weights[index] / totalWeight * 100}%`,
       createdCell: (cell) => { cell.setAttribute('role', 'cell'); },
       defaultContent: ''
     }));

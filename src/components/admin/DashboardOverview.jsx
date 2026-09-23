@@ -187,7 +187,7 @@ export default function DashboardOverview({
       headerClassName: 'text-center',
       className: 'text-center',
       render: (row) => (
-        <div className="flex flex-wrap items-center justify-center gap-1.5">
+        <div className="table-action-group flex items-center justify-center gap-1.5">
           <button
             type="button"
             onClick={() => onPreview(row)}
@@ -224,9 +224,9 @@ export default function DashboardOverview({
               disabled={Boolean(activeAction)}
               className="flex min-h-11 items-center gap-1 rounded-lg bg-sky-50 px-2.5 text-xs font-bold text-sky-700 shadow-2xs transition-colors hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
               title="Kembalikan ke antrean pending"
+              aria-label={`Kembalikan projek ${row.title} ke antrean menunggu`}
             >
-              <RotateCcw size={13} />
-              <span>Pulihkan</span>
+              <RotateCcw size={16} />
             </button>
           )}
         </div>
