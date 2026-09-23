@@ -1,126 +1,56 @@
 import React from 'react';
-import { X, User, GraduationCap, Calendar, Clock } from 'lucide-react';
+import { X, User, Clock, Video } from 'lucide-react';
 import ModalShell from '../common/ModalShell';
 import { DialogClose } from '../ui/dialog';
 import { getYouTubeEmbedUrl } from '../../data/projectsData';
+import { courseLabel } from '../../utils/courseLabel';
+import './ProjectDetailModal.css';
 
 export default function ProjectDetailModal({ project, onClose }) {
   if (!project) return null;
   const embedUrl = getYouTubeEmbedUrl(project.videoUrl);
-
+  const facts = [
+    ['Mata kuliah', courseLabel(project.course)],
+    ['Dosen pembimbing', project.supervisor],
+    ['Semester', project.semester],
+    ['Tahun akademik', project.year],
+    ['Tanggal projek', project.date]
+  ];
   return (
-    <ModalShell
-      onClose={onClose}
-      ariaLabel={`Detail projek ${project.title}`}
-      panelClassName="max-w-5xl max-h-[92vh] overflow-y-auto rounded-3xl lg:overflow-hidden"
-    >
-        {/* Close Button */}
-        <DialogClose
-          type="button"
-          className="absolute right-3 top-3 z-30 flex h-11 w-11 items-center justify-center rounded-xl bg-slate-950/85 text-white shadow-lg transition-colors hover:bg-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
-          aria-label="Tutup Modal"
-        >
-          <X size={18} />
-        </DialogClose>
-
-        {/* Layout: side-by-side on lg, stacked on mobile */}
-        <div className="flex flex-col lg:flex-row relative">
-          {/* Left: Video — drives the modal height via aspect-video */}
-          <div className="lg:w-3/5 flex-shrink-0 bg-black">
-            <div className="relative w-full aspect-video">
-              <iframe
-                src={embedUrl}
-                title={project.title}
-                className="absolute inset-0 w-full h-full border-none lg:rounded-l-3xl"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            </div>
-          </div>
-
-          {/* Right: Info Panel — absolute on desktop to match video height exactly, scrolls internally */}
-          <div className="lg:w-2/5 lg:absolute lg:top-0 lg:bottom-0 lg:right-0 overflow-y-auto">
-            <div className="p-5 sm:p-6 space-y-4">
-              {project.status === 'pending' && (
-                <div className="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-950">
-                  <Clock size={16} className="mt-0.5 shrink-0 text-amber-600" />
-                  <div>
-                    <p className="font-bold text-amber-900">Status: Menunggu Persetujuan</p>
-                    <p className="mt-0.5 leading-relaxed text-amber-800">
-                      Projek ini sedang menunggu peninjauan administrator TRK SV IPB. Hanya Anda dan pengelola sistem yang dapat melihat pratinjau ini sebelum disetujui untuk dipublikasikan ke publik.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Title & Metadata */}
-              <div>
-                <h2 className="font-heading text-lg font-extrabold text-slate-800 mb-1.5 leading-snug pr-8">
-                  {project.title}
-                </h2>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500 font-medium">
-                  <span className="flex items-center gap-1">
-                    <User size={12} className="text-sky-500" />
-                    {project.student} {project.nim ? `(${project.nim})` : ''}
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <GraduationCap size={12} className="text-sky-500" />
-                    Semester {project.semester}
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Calendar size={12} className="text-sky-500" />
-                    {project.date ? `${project.date} (${project.year})` : project.year}
-                  </span>
-                </div>
-              </div>
-
-              {/* Mata Kuliah & Dosen */}
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2.5">
-                <div>
-                  <span className="mb-0.5 block text-xs font-bold uppercase tracking-wider text-slate-600">
-                    MATA KULIAH TRK
-                  </span>
-                  <p className="font-bold text-xs text-slate-800">{project.course}</p>
-                </div>
-                <div>
-                  <span className="mb-0.5 block text-xs font-bold uppercase tracking-wider text-slate-600">
-                    DOSEN PEMBIMBING
-                  </span>
-                  <p className="font-bold text-xs text-slate-800">{project.supervisor || 'Belum dicantumkan'}</p>
-                </div>
-              </div>
-
-              {/* Deskripsi */}
-              {(project.description || project.desc) && (
-                <div>
-                  <h4 className="font-heading text-xs font-bold text-slate-800 mb-1">Deskripsi Projek</h4>
-                  <p className="text-slate-600 text-xs leading-relaxed">{project.description || project.desc}</p>
-                </div>
-              )}
-
-              {/* Tech Stack */}
-              {project.techStack && project.techStack.length > 0 && (
-                <div>
-                  <h4 className="font-heading text-xs font-bold text-slate-800 mb-1.5">
-                    Teknologi Yang Digunakan
-                  </h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {project.techStack.map((tech, idx) => (
-                      <span
-                        key={idx}
-                        className="rounded-lg border border-sky-100 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800"
-                      >
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+    <ModalShell onClose={onClose} ariaLabel={`Detail projek ${project.title}`} panelClassName="project-detail-modal">
+      <header className="project-detail-header">
+        <div>
+          <h2>{project.title}</h2>
+          <p className="project-detail-author"><User size={16} aria-hidden="true" /><span>{project.student}{project.nim && <span className="project-detail-nim"> · NIM {project.nim}</span>}</span></p>
         </div>
+        <DialogClose type="button" className="project-detail-close" aria-label="Tutup detail projek" title="Tutup detail projek"><X size={20} aria-hidden="true" /></DialogClose>
+      </header>
+      <div className="project-detail-scroll">
+        {project.status === 'pending' && (
+          <div className="project-detail-status" role="status">
+            <Clock size={18} aria-hidden="true" />
+            <div><strong>Menunggu persetujuan</strong><p>Projek sedang ditinjau. Pratinjau ini hanya dapat dilihat oleh Anda dan pengelola hingga disetujui untuk dipublikasikan.</p></div>
+          </div>
+        )}
+        <div className="project-detail-layout">
+          <div className="project-detail-main">
+            <div className="project-detail-video">
+              {embedUrl ? <iframe src={embedUrl} title={`Video projek ${project.title}`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /> : <div className="project-detail-video-empty"><Video size={28} aria-hidden="true" /><p>Video belum tersedia</p></div>}
+            </div>
+            <section className="project-detail-description" aria-label="Deskripsi projek">
+              <h3>Tentang projek</h3>
+              <p>{project.description || project.desc || 'Deskripsi projek belum dicantumkan.'}</p>
+            </section>
+          </div>
+          <aside className="project-detail-info" aria-label="Informasi projek">
+            <section>
+              <h3>Informasi akademik</h3>
+              <dl className="project-detail-facts">{facts.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || 'Belum dicantumkan'}</dd></div>)}</dl>
+            </section>
+            {project.techStack?.length > 0 && <section className="project-detail-technologies"><h3>Teknologi yang digunakan</h3><ul>{project.techStack.map((tech, index) => <li key={`${tech}-${index}`}>{tech}</li>)}</ul></section>}
+          </aside>
+        </div>
+      </div>
     </ModalShell>
   );
 }
