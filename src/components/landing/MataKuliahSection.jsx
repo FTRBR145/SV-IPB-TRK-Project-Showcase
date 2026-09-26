@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
-import { ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function MataKuliahSection({ onSelectCourse }) {
+export default function MataKuliahSection({ onSelectCourse, selectedCourse }) {
   const scrollRef = useRef(null);
 
   const baseCourses = [
@@ -63,6 +63,9 @@ export default function MataKuliahSection({ onSelectCourse }) {
         >
           Mata Kuliah berbasis Project
         </h2>
+        <p className="mb-6 max-w-2xl text-sm leading-relaxed text-slate-600">
+          Pilih mata kuliah untuk melihat projek mahasiswanya di bagian bawah.
+        </p>
 
         <div className="relative group/slider">
           <button
@@ -84,14 +87,10 @@ export default function MataKuliahSection({ onSelectCourse }) {
               <button
                 type="button"
                 key={c.courseFullName}
-                className="course-card group w-[min(16rem,calc(100vw-3.5rem))] flex-shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white text-left transition-colors hover:border-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 sm:w-72"
+                aria-label={selectedCourse === c.courseFullName ? `Projek mata kuliah ${c.name} sedang ditampilkan` : `Lihat projek mata kuliah ${c.name}`}
+                className={`course-card group w-[min(16rem,calc(100vw-3.5rem))] flex-shrink-0 overflow-hidden rounded-xl border bg-white text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 sm:w-72 ${selectedCourse === c.courseFullName ? 'border-sky-600 ring-1 ring-sky-600' : 'border-slate-200 hover:border-slate-500'}`}
                 onClick={() => {
                   if (onSelectCourse) onSelectCourse(c.courseFullName);
-                  const el = document.getElementById('projects');
-                  if (el) {
-                    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
-                    el.scrollIntoView({ behavior });
-                  }
                 }}
               >
                 <div className="relative h-44 overflow-hidden">
@@ -105,9 +104,9 @@ export default function MataKuliahSection({ onSelectCourse }) {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="flex items-center justify-between gap-3 p-4 min-h-20 text-slate-900 font-semibold text-sm">
-                  <span>{c.name}</span>
-                  <ArrowUpRight className="course-arrow shrink-0" size={18} aria-hidden="true" />
+                <div className="flex min-h-24 flex-col justify-center gap-1 p-4">
+                  <span className="text-sm font-semibold text-slate-900">{c.name}</span>
+                  <span className="text-xs font-semibold text-sky-700">{selectedCourse === c.courseFullName ? 'Sedang ditampilkan' : 'Lihat projek'}</span>
                 </div>
               </button>
             ))}

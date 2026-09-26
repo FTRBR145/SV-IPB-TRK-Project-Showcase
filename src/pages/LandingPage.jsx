@@ -34,6 +34,20 @@ export default function LandingPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const courseFromUrl = searchParams.get('course') || '';
 
+  const handleSelectCourse = (course) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (course) nextParams.set('course', course);
+    else nextParams.delete('course');
+    navigate({ pathname: '/', search: nextParams.toString(), hash: '#projects' }, { replace: true });
+    setSelectedCourse(course);
+  };
+
+  const handleClearFilters = () => {
+    handleSelectCourse('');
+    setSelectedSemester('ALL');
+    setSearchQuery('');
+  };
+
   useEffect(() => {
     setSelectedCourse(courseFromUrl);
     setSelectedSemester('ALL');
@@ -151,7 +165,7 @@ export default function LandingPage() {
         onNavigateToAdmin={() => navigate('/admin')}
         onNavigateToStudent={handleNavigateToStudent}
         onBackToLanding={() => navigate('/#home')}
-        onSelectCourse={(course) => setSelectedCourse(course)}
+        onSelectCourse={handleSelectCourse}
       />
 
       <main id="main-content">
@@ -167,7 +181,7 @@ export default function LandingPage() {
         <StatsBar />
 
         {/* Mata Kuliah Carousel Section */}
-        <MataKuliahSection onSelectCourse={(course) => setSelectedCourse(course)} />
+        <MataKuliahSection onSelectCourse={handleSelectCourse} selectedCourse={selectedCourse} />
 
         {/* Projects Showcase Catalog */}
         <ProjectShowcase
@@ -175,7 +189,7 @@ export default function LandingPage() {
           catalogStatus={catalogStatus}
           selectedSemester={selectedSemester}
           selectedCourse={selectedCourse}
-          onClearFilters={() => { setSelectedCourse(''); setSelectedSemester('ALL'); setSearchQuery(''); }}
+          onClearFilters={handleClearFilters}
           onSelectSemester={setSelectedSemester}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}

@@ -20,6 +20,7 @@ export default function ProjectShowcase({
 }) {
   const semesters = ['ALL', 1, 2, 3, 4, 5, 6, 7, 8];
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const hasFilters = Boolean(selectedCourse || selectedSemester !== 'ALL' || searchQuery.trim());
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
@@ -36,21 +37,29 @@ export default function ProjectShowcase({
             <h2
               className="font-heading text-2xl sm:text-3xl font-semibold text-slate-800"
             >
-              Projek TRK Terbaru
+              {selectedCourse ? `Projek Mata Kuliah: ${courseLabel(selectedCourse)}` : 'Projek TRK Terbaru'}
             </h2>
             <p
               className="text-slate-600 text-sm mt-1"
             >
-              Jelajahi karya mahasiswa TRK Sekolah Vokasi IPB tanpa perlu masuk akun.
+              {selectedCourse
+                ? 'Menampilkan karya mahasiswa dari mata kuliah yang Anda pilih.'
+                : 'Jelajahi karya mahasiswa TRK Sekolah Vokasi IPB tanpa perlu masuk akun.'}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onNavigateToStudent}
-            className="inline-flex min-h-11 items-center gap-1.5 self-start rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 sm:self-auto"
-          >
-            Buka Portal Mahasiswa <ArrowRight size={14} />
-          </button>
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+            {selectedCourse && <button type="button" onClick={onClearFilters}
+              className="min-h-11 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 transition-colors hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600">
+              Lihat semua projek
+            </button>}
+            <button
+              type="button"
+              onClick={onNavigateToStudent}
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
+            >
+              Buka Portal Mahasiswa <ArrowRight size={14} />
+            </button>
+          </div>
         </div>
 
         {/* Controls: Semester Tabs & Search */}
@@ -92,10 +101,10 @@ export default function ProjectShowcase({
           </div>
         </div>
 
-        {catalogStatus === 'ready' && (selectedCourse || selectedSemester !== 'ALL' || searchQuery) && (
+        {catalogStatus === 'ready' && hasFilters && (
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6 text-sm text-slate-600" role="status">
-            <span>{projects.length} projek{selectedCourse ? ` · ${courseLabel(selectedCourse)}` : ''}</span>
-            <button type="button" onClick={onClearFilters} className="min-h-11 underline underline-offset-4 text-slate-900">Hapus filter</button>
+            <span>{projects.length} projek ditemukan{selectedSemester !== 'ALL' ? ` · Semester ${selectedSemester}` : ''}{searchQuery.trim() ? ` · Pencarian: “${searchQuery.trim()}”` : ''}</span>
+            {!selectedCourse && <button type="button" onClick={onClearFilters} className="min-h-11 font-semibold underline underline-offset-4 text-slate-900">Hapus semua filter</button>}
           </div>
         )}
         {/* Projects Grid */}
@@ -113,9 +122,9 @@ export default function ProjectShowcase({
           </div>
         ) : (
           <div className="py-16 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-            <h3 className="font-heading text-lg font-bold text-slate-700 mb-1">{selectedCourse || selectedSemester !== 'ALL' || searchQuery.trim() ? 'Tidak ada projek yang cocok' : 'Belum ada projek dipublikasikan'}</h3>
+            <h3 className="font-heading text-lg font-bold text-slate-700 mb-1">{hasFilters ? 'Tidak ada projek yang cocok' : 'Belum ada projek dipublikasikan'}</h3>
             <p className="text-slate-500 text-xs">
-              {selectedCourse || selectedSemester !== 'ALL' || searchQuery.trim() ? 'Coba kata kunci lain atau hapus filter untuk melihat lebih banyak projek.' : 'Karya yang sudah diterbitkan akan tampil di sini. Silakan kunjungi kembali nanti.'}
+              {hasFilters ? 'Coba kata kunci lain atau lihat semua projek.' : 'Karya yang sudah diterbitkan akan tampil di sini. Silakan kunjungi kembali nanti.'}
             </p>
           </div>
         )}
