@@ -17,6 +17,11 @@ const DEFAULT_COURSES = SV_COURSES.filter((course) => course !== 'Semua Mata Kul
 export function AppProvider({ children }) {
   const [studentAccounts, setStudentAccounts] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [catalogStatus, setCatalogStatus] = useState('loading');
+  const catalogController = useRef(null);
+  const [publicDataError, setPublicDataError] = useState(false);
+  const [publicDataLoading, setPublicDataLoading] = useState(true);
+  const publicDataController = useRef(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [courses, setCourses] = useState(DEFAULT_COURSES);
@@ -35,6 +40,8 @@ export function AppProvider({ children }) {
 
   useEffect(() => () => {
     if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    catalogController.current?.abort();
+    publicDataController.current?.abort();
   }, []);
 
   const showToast = useCallback((message, type = 'success') => {
@@ -46,19 +53,45 @@ export function AppProvider({ children }) {
     }, 4200);
   }, []);
 
-  const loadPublicData = useCallback(async (signal) => {
-    const [projectResponse, courseResponse, categoryResponse, settingResponse] = await Promise.all([
-      loadProjectCatalog({ signal }),
-      apiRequest('/courses', { signal }),
-      apiRequest('/categories', { signal }),
-      apiRequest('/settings/public', { signal })
-    ]);
-    if (signal?.aborted) return;
-    setProjects(projectResponse);
-    setCourses(courseResponse);
-    setCategories(categoryResponse);
-    setAdminSettings(settingResponse);
+  const refreshCatalog = useCallback(async () => {
+    if (catalogController.current && !catalogController.current.signal.aborted) return;
+    const controller = new AbortController();
+    catalogController.current = controller;
+    setCatalogStatus('loading');
+    try {
+      const result = await loadProjectCatalog({ signal: controller.signal });
+      if (!controller.signal.aborted) {
+        setProjects(result);
+        setCatalogStatus('ready');
+      }
+    } catch {
+      if (!controller.signal.aborted) setCatalogStatus('error');
+    } finally {
+      if (catalogController.current === controller) catalogController.current = null;
+    }
   }, []);
+
+  const refreshPublicData = useCallback(async () => {
+    if (publicDataController.current && !publicDataController.current.signal.aborted) return;
+    const controller = new AbortController();
+    publicDataController.current = controller;
+    setPublicDataLoading(true);
+    try {
+      const results = await Promise.allSettled(
+        [['/courses', setCourses], ['/categories', setCategories], ['/settings/public', setAdminSettings]]
+          .map(async ([path, setter]) => {
+            const data = await apiRequest(path, { signal: controller.signal });
+            if (!controller.signal.aborted) setter(data);
+          })
+      );
+      if (!controller.signal.aborted) setPublicDataError(results.some(result => result.status === 'rejected'));
+    } finally {
+      if (!controller.signal.aborted) setPublicDataLoading(false);
+      if (publicDataController.current === controller) publicDataController.current = null;
+    }
+  }, []);
+
+  const loadPublicData = useCallback(() => Promise.all([refreshCatalog(), refreshPublicData()]), [refreshCatalog, refreshPublicData]);
 
   const loadPrivateData = useCallback(async (role, signal) => {
     if (role === 'admin') {
@@ -116,7 +149,7 @@ export function AppProvider({ children }) {
     const initialize = async () => {
       setIsLoading(true);
       try {
-        await loadPublicData(controller.signal);
+        await loadPublicData();
       } catch (error) {
         if (active) {
           showToast(error.message, 'error');
@@ -462,6 +495,11 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider value={{
       projects,
+      catalogStatus,
+      refreshCatalog,
+      publicDataError,
+      publicDataLoading,
+      refreshPublicData,
       studentAccounts,
       refreshStudents: async () => {
         setStudentAccounts(await apiRequest('/students'));

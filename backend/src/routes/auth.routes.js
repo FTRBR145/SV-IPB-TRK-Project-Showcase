@@ -5,7 +5,7 @@ import { env } from '../config/env.js';
 import { authenticate, bestEffortAuthenticate } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { loginSchema, profileSchema, passwordSchema } from '../schemas/index.js';
-import { ApiError, asyncHandler, sendData } from '../utils/http.js';
+import { ApiError, sendData } from '../utils/http.js';
 
 const router = Router();
 
@@ -24,7 +24,7 @@ function sessionCookieOptions() {
   };
 }
 
-router.post('/login', validate(loginSchema), asyncHandler(async (request, response) => {
+router.post('/login', validate(loginSchema), async (request, response) => {
   const identifier = request.body.identifier || request.body.email;
   const user = await request.app.locals.repository.findUserByIdentifier(identifier);
   const validPassword = user ? await bcrypt.compare(request.body.password, user.passwordHash) : false;
@@ -44,9 +44,9 @@ router.post('/login', validate(loginSchema), asyncHandler(async (request, respon
   }
   response.set('Cache-Control', 'no-store');
   sendData(response, { user: publicUser(user) });
-}));
+});
 
-router.post('/logout', bestEffortAuthenticate, asyncHandler(async (request, response) => {
+router.post('/logout', bestEffortAuthenticate, async (request, response) => {
   if (request.user?.role === 'admin') {
     await request.app.locals.repository.recordActivity('Admin logout.', 'logout', request.user);
   }
@@ -54,7 +54,7 @@ router.post('/logout', bestEffortAuthenticate, asyncHandler(async (request, resp
   response.clearCookie(env.cookieName, clearOptions);
   response.set('Cache-Control', 'no-store');
   sendData(response, { loggedOut: true });
-}));
+});
 
 router.get('/me', authenticate, async (request, response) => {
   response.set('Cache-Control', 'no-store');

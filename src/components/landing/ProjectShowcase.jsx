@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Search, ArrowRight } from 'lucide-react';
 import ProjectCard from '../projects/ProjectCard';
 import { courseLabel } from '../../utils/courseLabel';
+import CatalogFeedback from '../common/CatalogFeedback';
+
+const PAGE_SIZE = 6;
 
 export default function ProjectShowcase({
   projects,
+  catalogStatus,
   selectedSemester,
   selectedCourse,
   onClearFilters,
@@ -15,6 +19,13 @@ export default function ProjectShowcase({
   onNavigateToStudent
 }) {
   const semesters = ['ALL', 1, 2, 3, 4, 5, 6, 7, 8];
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [selectedSemester, selectedCourse, searchQuery]);
+
+  const remainingCount = Math.max(0, projects.length - visibleCount);
 
   return (
     <section id="projects" className="py-16 bg-white">
@@ -30,7 +41,7 @@ export default function ProjectShowcase({
             <p
               className="text-slate-600 text-sm mt-1"
             >
-              Karya mahasiswa Program Studi Teknologi Rekayasa Komputer Sekolah Vokasi IPB.
+              Jelajahi karya mahasiswa TRK Sekolah Vokasi IPB tanpa perlu masuk akun.
             </p>
           </div>
           <button
@@ -38,7 +49,7 @@ export default function ProjectShowcase({
             onClick={onNavigateToStudent}
             className="inline-flex min-h-11 items-center gap-1.5 self-start rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 sm:self-auto"
           >
-            Lihat Semua Projek <ArrowRight size={14} />
+            Buka Portal Mahasiswa <ArrowRight size={14} />
           </button>
         </div>
 
@@ -73,7 +84,7 @@ export default function ProjectShowcase({
             <input
               id="project-search"
               type="text"
-              placeholder="Cari judul, mahasiswa, atau stack..."
+              placeholder="Cari judul, mahasiswa, atau teknologi"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 py-2 pl-10 pr-4 text-base text-slate-800 placeholder-slate-500 transition-colors focus:border-sky-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 sm:text-sm"
@@ -81,16 +92,17 @@ export default function ProjectShowcase({
           </div>
         </div>
 
-        {(selectedCourse || selectedSemester !== 'ALL' || searchQuery) && (
+        {catalogStatus === 'ready' && (selectedCourse || selectedSemester !== 'ALL' || searchQuery) && (
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6 text-sm text-slate-600" role="status">
             <span>{projects.length} projek{selectedCourse ? ` · ${courseLabel(selectedCourse)}` : ''}</span>
             <button type="button" onClick={onClearFilters} className="min-h-11 underline underline-offset-4 text-slate-900">Hapus filter</button>
           </div>
         )}
         {/* Projects Grid */}
-        {projects.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project, index) => (
+        <CatalogFeedback />
+        {catalogStatus !== 'ready' ? null : projects.length > 0 ? (
+          <div key={`${selectedSemester}:${selectedCourse}`} className="catalog-results grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.slice(0, visibleCount).map((project, index) => (
               <ProjectCard
                 key={project.id}
                 project={project}
@@ -101,10 +113,18 @@ export default function ProjectShowcase({
           </div>
         ) : (
           <div className="py-16 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-            <h3 className="font-heading text-lg font-bold text-slate-700 mb-1">Tidak ada projek ditemukan</h3>
+            <h3 className="font-heading text-lg font-bold text-slate-700 mb-1">{selectedCourse || selectedSemester !== 'ALL' || searchQuery.trim() ? 'Tidak ada projek yang cocok' : 'Belum ada projek dipublikasikan'}</h3>
             <p className="text-slate-500 text-xs">
-              Coba sesuaikan kata kunci pencarian atau filter semester yang dipilih.
+              {selectedCourse || selectedSemester !== 'ALL' || searchQuery.trim() ? 'Coba kata kunci lain atau hapus filter untuk melihat lebih banyak projek.' : 'Karya yang sudah diterbitkan akan tampil di sini. Silakan kunjungi kembali nanti.'}
             </p>
+          </div>
+        )}
+        {catalogStatus === 'ready' && remainingCount > 0 && (
+          <div className="mt-8 text-center">
+            <button type="button" onClick={() => setVisibleCount(count => count + PAGE_SIZE)}
+              className="min-h-11 rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600">
+              Tampilkan {Math.min(PAGE_SIZE, remainingCount)} projek berikutnya ({remainingCount} tersisa)
+            </button>
           </div>
         )}
       </div>

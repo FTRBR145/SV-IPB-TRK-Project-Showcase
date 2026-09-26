@@ -101,6 +101,22 @@ npm test
 
 Tes backend menjalankan migrasi yang sama pada mesin PostgreSQL PGlite dengan database sementara, bukan database Supabase Anda. Cakupannya: login, 401/403, validasi, unggah, privasi pengajuan, persetujuan ganda, reject/restore, edit/hapus, pagination >100, rollback, RLS, dan buka ulang database. Untuk multi-instance, uji tambahan pada Supabase menguji dua koneksi terpisah sebelum deployment.
 
+Database tes disimpan di `.test-data/` pada root proyek (diabaikan Git), sehingga tidak memerlukan akses ke direktori Temp Windows. Setiap proses membuat subdirektori unik dan menghapusnya setelah database ditutup; direktori induk tetap ada. `TEST_DATA_DIR` dapat mengganti lokasi ini. Path relatif selalu dihitung dari root proyek, termasuk saat menjalankan `npm --prefix backend test`. Gunakan subdirektori `.test-data/` agar data tetap diabaikan Git; lokasi lain perlu aturan Git ignore sendiri.
+
+Jalankan kedua suite dari root proyek di PowerShell:
+
+```powershell
+node --test tests/*.test.js
+npm --prefix backend test
+
+# Opsional: lokasi lain yang writable di dalam proyek
+$env:TEST_DATA_DIR = '.test-data/windows'
+npm --prefix backend test
+Remove-Item Env:TEST_DATA_DIR
+```
+
+Suite backend juga memvalidasi preview/impor 120 mahasiswa, penolakan duplikat, batch invalid tanpa penyimpanan parsial, serta login akun hasil impor.
+
 Frontend mengambil setiap halaman `/projects?page=N&limit=100` menggunakan metadata pagination untuk menjaga filter dan statistik lokal tetap lengkap. Detail publik diambil dari `/projects/:id`, sedangkan pratinjau pengajuan sendiri memakai parameter URL `submission` agar ID-nya tidak bentrok dengan ID projek publik.
 
 ## Manajemen akun mahasiswa

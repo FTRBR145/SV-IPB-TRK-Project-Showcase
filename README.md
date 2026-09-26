@@ -90,7 +90,7 @@ SV-IPB-HW-PKL-Project-Showcase/
 │   │   └── student/                # StudentSidebar
 │   ├── context/                    # AppContext (Global State & API Synchronization)
 │   ├── data/                       # Fallback demo datasets
-│   ├── hooks/                      # useApp, useScrollReveal, useInViewOnce
+│   ├── hooks/                      # useApp, useProjectDetail
 │   ├── pages/                      # LandingPage, StudentHome, UploadProjectPage, AdminDashboard
 │   ├── App.jsx                     # Route definitions & layout wrappers
 │   ├── index.css                   # Tailwind v4 directives & keyframe animations

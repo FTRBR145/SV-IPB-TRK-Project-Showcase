@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Clock, Plus, Search, X } from 'lucide-react';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
+import CatalogFeedback from '../components/common/CatalogFeedback';
 import { isAdminAccount, isStudentAccount } from '../utils/accessControl';
 import StudentProjectCard from '../components/student/StudentProjectCard';
 import { matchesStudentProject, isEmptyPortfolio } from '../utils/studentFeed';
@@ -35,7 +36,7 @@ function belongsToStudent(project, student) {
 export default function StudentHome() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { projects, submissions, currentUser, isLoggedIn, logout, courses, showToast, updateSubmission } = useApp();
+  const { projects, catalogStatus, submissions, currentUser, isLoggedIn, logout, courses, showToast, updateSubmission } = useApp();
   const isAdminPreview = isAdminAccount(currentUser);
   const studentUser = isStudentAccount(currentUser) ? currentUser : null;
 
@@ -187,7 +188,7 @@ export default function StudentHome() {
               </select>
             </div>
             <div className="student-results-bar">
-              <p role="status" aria-live="polite" aria-atomic="true">{filteredProjects.length} projek{hasFilters ? ' cocok dengan filter' : personal ? ' dalam portofolio Anda' : ' untuk dijelajahi'}</p>
+              {catalogStatus === 'ready' && <p role="status" aria-live="polite" aria-atomic="true">{filteredProjects.length} projek{hasFilters ? ' cocok dengan filter' : personal ? ' dalam portofolio Anda' : ' untuk dijelajahi'}</p>}
               {hasFilters && <button type="button" onClick={resetFilters}>Hapus semua filter</button>}
             </div>
             {hasFilters && <div className="student-filter-chips" aria-label="Filter aktif">
@@ -196,7 +197,8 @@ export default function StudentHome() {
               {searchQuery && <button type="button" onClick={() => handleSearchChange('')} aria-label="Hapus kata pencarian">“{searchQuery}”<X size={14} /></button>}
             </div>}
             {personal && myPendingSubmissions.length > 0 && <p className="student-pending-note"><Clock size={18} aria-hidden="true" /><span>{myPendingSubmissions.length} pengajuan menunggu persetujuan. Hanya Anda yang dapat melihatnya sampai diterbitkan admin.</span></p>}
-            {filteredProjects.length === 0 ? (
+            <CatalogFeedback />
+            {catalogStatus !== 'ready' ? null : filteredProjects.length === 0 ? (
               <section className="student-empty" aria-labelledby="student-empty-title">
                 <Search size={28} aria-hidden="true" />
                 <h2 id="student-empty-title">{trulyEmpty ? 'Belum ada projek milik Anda' : 'Tidak ada projek yang cocok'}</h2>
@@ -214,7 +216,7 @@ export default function StudentHome() {
                 onEdit={project.isPending ? setEditingSubmission : undefined}
               />
             )}</div>}
-            {remainingProjectCount > 0 && <div className="student-load-more"><button type="button" onClick={() => setVisibleProjectCount(count => count + PAGE_SIZE)}>
+            {catalogStatus === 'ready' && remainingProjectCount > 0 && <div className="student-load-more"><button type="button" onClick={() => setVisibleProjectCount(count => count + PAGE_SIZE)}>
               Tampilkan {Math.min(PAGE_SIZE, remainingProjectCount)} projek berikutnya <span>({remainingProjectCount} tersisa)</span>
             </button></div>}
           </main>

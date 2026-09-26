@@ -27,7 +27,7 @@ export default function LandingPage() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { projectId } = useParams();
-  const { projects, currentUser, isLoggedIn, logout, adminSettings, showToast, courses } = useApp();
+  const { projects, catalogStatus, currentUser, isLoggedIn, logout, adminSettings, showToast, courses } = useApp();
 
   const [selectedSemester, setSelectedSemester] = useState('ALL');
   const [selectedCourse, setSelectedCourse] = useState('');
@@ -150,6 +150,7 @@ export default function LandingPage() {
         onLogout={logout}
         onNavigateToAdmin={() => navigate('/admin')}
         onNavigateToStudent={handleNavigateToStudent}
+        onBackToLanding={() => navigate('/#home')}
         onSelectCourse={(course) => setSelectedCourse(course)}
       />
 
@@ -157,7 +158,6 @@ export default function LandingPage() {
         {/* Hero Banner Section */}
         <HeroSection
           onOpenUpload={handleOpenUpload}
-          onNavigateToStudent={handleNavigateToStudent}
         />
 
         {/* About Section */}
@@ -172,6 +172,7 @@ export default function LandingPage() {
         {/* Projects Showcase Catalog */}
         <ProjectShowcase
           projects={filteredProjects}
+          catalogStatus={catalogStatus}
           selectedSemester={selectedSemester}
           selectedCourse={selectedCourse}
           onClearFilters={() => { setSelectedCourse(''); setSelectedSemester('ALL'); setSearchQuery(''); }}

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react';
 
 export default function MataKuliahSection({ onSelectCourse }) {
   const scrollRef = useRef(null);
@@ -84,7 +84,7 @@ export default function MataKuliahSection({ onSelectCourse }) {
               <button
                 type="button"
                 key={c.courseFullName}
-                className="group w-[min(16rem,calc(100vw-3.5rem))] flex-shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white text-left transition-colors hover:border-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 sm:w-72"
+                className="course-card group w-[min(16rem,calc(100vw-3.5rem))] flex-shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white text-left transition-colors hover:border-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 sm:w-72"
                 onClick={() => {
                   if (onSelectCourse) onSelectCourse(c.courseFullName);
                   const el = document.getElementById('projects');
@@ -105,8 +105,9 @@ export default function MataKuliahSection({ onSelectCourse }) {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="p-4 min-h-20 text-slate-900 font-semibold text-sm">
+                <div className="flex items-center justify-between gap-3 p-4 min-h-20 text-slate-900 font-semibold text-sm">
                   <span>{c.name}</span>
+                  <ArrowUpRight className="course-arrow shrink-0" size={18} aria-hidden="true" />
                 </div>
               </button>
             ))}

@@ -70,8 +70,7 @@ export default function AdminDashboard() {
   } = useApp();
 
   const requestedSection = searchParams.get('section');
-  const initialMenu = ADMIN_MENU.some((item) => item.id === requestedSection) ? requestedSection : 'dashboard';
-  const [activeMenu, setActiveMenu] = useState(initialMenu);
+  const activeMenu = ADMIN_MENU.some((item) => item.id === requestedSection) ? requestedSection : 'dashboard';
   const [projectSearch, setProjectSearch] = useState('');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [previewProject, setPreviewProject] = useState(null);
@@ -91,7 +90,6 @@ export default function AdminDashboard() {
   const [pageTitle, pageDescription] = menuDescriptions[activeMenu];
 
   const selectMenu = (menuId) => {
-    setActiveMenu(menuId);
     setSearchParams(menuId === 'dashboard' ? {} : { section: menuId }, { replace: true });
   };
 

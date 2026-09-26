@@ -31,7 +31,7 @@ export default function ProjectCard({ project, onClickDetail, motionIndex = 0 })
           Semester {project.semester}
         </span>
         <div className="absolute bottom-3 right-3">
-          <div className="w-11 h-11 rounded-full bg-white text-slate-900 flex items-center justify-center">
+          <div className="project-play w-11 h-11 rounded-full bg-white text-slate-900 flex items-center justify-center">
             <Play size={22} fill="currentColor" className="ml-1" />
           </div>
         </div>

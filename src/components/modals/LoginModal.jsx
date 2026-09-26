@@ -54,12 +54,12 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
                 <ShieldCheck size={32} />
               </div>
               <h3 className="font-heading text-lg font-bold text-slate-800">
-                Memverifikasi Akun...
+                Memeriksa akun...
               </h3>
               <p className="text-sm text-slate-600" role="status" aria-live="polite">
                 {role === 'admin'
-                  ? 'Menghubungkan ke Portal Administrator TRK SV IPB...'
-                  : 'Menghubungkan ke Portal Mahasiswa TRK SV IPB...'}
+                  ? 'Menyiapkan dashboard admin...'
+                  : 'Menyiapkan portal mahasiswa...'}
               </p>
             </div>
           ) : (
@@ -70,10 +70,10 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
                   <Lock size={22} />
                 </div>
                 <h2 className="font-heading text-xl font-extrabold text-slate-900">
-                  Autentikasi Akun TRK
+                  Masuk ke Showcase TRK
                 </h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  Pilih peran kamu untuk masuk ke sistem showcase projek SV IPB.
+                  Pilih jenis akun untuk membuka portal. Katalog projek dapat dilihat tanpa masuk akun.
                 </p>
               </div>
 

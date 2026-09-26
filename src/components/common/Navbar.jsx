@@ -167,7 +167,6 @@ export default function Navbar({
                 type="button"
                 onClick={() => setCourseDropdownOpen((open) => !open)}
                 aria-expanded={courseDropdownOpen}
-                aria-haspopup="menu"
                 className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
               >
                 <span>Mata Kuliah</span>
@@ -178,7 +177,7 @@ export default function Navbar({
               </button>
               {courseDropdownOpen && (
                 <div
-                  role="menu"
+                  role="group"
                   aria-label="Katalog Mata Kuliah"
                   className="absolute top-full left-0 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2"
                 >
@@ -186,7 +185,6 @@ export default function Navbar({
                     <a
                       key={course}
                       href="#projects"
-                      role="menuitem"
                       className="flex min-h-11 items-center px-4 py-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:bg-slate-50 focus-visible:text-slate-900"
                       onClick={() => {
                         onSelectCourse?.(course === 'Semua Mata Kuliah' ? '' : course);
@@ -215,7 +213,6 @@ export default function Navbar({
                 className="flex min-h-11 items-center gap-2 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
                 aria-label={`Menu akun ${currentUser.name}`}
                 aria-expanded={userDropdownOpen}
-                aria-haspopup="menu"
               >
                 <User size={15} className="text-slate-600" />
                 <span className="hidden sm:inline text-xs font-bold text-slate-800 max-w-[130px] truncate text-left">
@@ -226,24 +223,23 @@ export default function Navbar({
 
               {/* Dropdown Menu */}
               {userDropdownOpen && (
-                <div role="menu" aria-label="Opsi Akun" className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                <div role="group" aria-label="Opsi Akun" className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
                   <div className="px-4 py-2 border-b border-slate-100">
                     <p className="text-xs font-bold text-slate-900 truncate">
                       {currentUser.name}
                     </p>
-                    <p className="text-xs font-mono text-slate-600">
+                    <p className="text-xs font-mono text-slate-600 break-all">
                       {currentUser.nim || currentUser.email}
                     </p>
                   </div>
                   {accountLinks.map(({ label, icon: Icon, action }) => <button
-                    key={label} type="button" role="menuitem"
+                    key={label} type="button"
                     onClick={() => { action(); closeMobileMenu(); }}
                     className="flex min-h-11 w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:bg-slate-50"
                   ><Icon size={16} /><span>{label}</span></button>)}
                   <div className="border-t border-slate-100 my-1"></div>
                   <button
                     type="button"
-                    role="menuitem"
                     onClick={() => {
                       onLogout?.();
                       closeMobileMenu();
