@@ -48,7 +48,7 @@ Ubah semua kredensial dan `JWT_SECRET` melalui `.env` sebelum deployment.
 | `GET` | `/api/health` | Publik | Status server |
 | `POST` | `/api/auth/login` | Publik | Membuat sesi cookie HttpOnly memakai email, NIM, atau NIP |
 | `POST` | `/api/auth/logout` | Login/Publik | Menghapus cookie sesi, termasuk cookie kedaluwarsa/tidak valid |
-| `GET` | `/api/auth/me` | Login | Profil pengguna aktif |
+| `GET` | `/api/auth/me` | Publik | Profil pengguna aktif, atau `null` untuk pengunjung tanpa sesi |
 | `GET` | `/api/projects` | Publik | Daftar, pencarian, filter, pagination projek |
 | `GET` | `/api/projects/:id` | Publik | Detail projek |
 | `POST` | `/api/projects` | Mahasiswa/Admin | Upload projek atau kirim ke moderasi |

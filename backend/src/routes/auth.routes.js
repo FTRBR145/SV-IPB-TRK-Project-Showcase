@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
-import { authenticate, bestEffortAuthenticate } from '../middleware/auth.js';
+import { authenticate, bestEffortAuthenticate, optionalAuthenticate } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { loginSchema, profileSchema, passwordSchema } from '../schemas/index.js';
 import { ApiError, sendData } from '../utils/http.js';
@@ -56,8 +56,9 @@ router.post('/logout', bestEffortAuthenticate, async (request, response) => {
   sendData(response, { loggedOut: true });
 });
 
-router.get('/me', authenticate, async (request, response) => {
+router.get('/me', optionalAuthenticate, async (request, response) => {
   response.set('Cache-Control', 'no-store');
+  if (!request.user) return sendData(response, null);
   const user = await request.app.locals.repository.findUserById(request.user.id);
   sendData(response, publicUser(user));
 });

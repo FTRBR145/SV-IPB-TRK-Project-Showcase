@@ -27,7 +27,16 @@ test('cookie session restores through /auth/me and logout clears it', async () =
   assert.ok(logout.headers['set-cookie']?.some(cookie =>
     cookie.startsWith(`${env.cookieName}=`) && /Expires=Thu, 01 Jan 1970/.test(cookie)
   ));
-  await browser.get(env.apiPrefix + '/auth/me').expect(401);
+  const anonymous = await browser.get(env.apiPrefix + '/auth/me').expect(200);
+  assert.equal(anonymous.body.data, null);
+});
+
+test('invalid session token still returns 401', async () => {
+  const response = await request(createApp({ repository: createMemoryRepository() }))
+    .get(env.apiPrefix + '/auth/me')
+    .set('Cookie', `${env.cookieName}=not-a-jwt`)
+    .expect(401);
+  assert.equal(response.body.error.code, 'INVALID_TOKEN');
 });
 
 test('logout clears an invalid cookie instead of trapping the browser in a broken session', async () => {
