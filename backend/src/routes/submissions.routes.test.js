@@ -33,6 +33,27 @@ async function loggedInStudent(seed) {
   return browser;
 }
 
+test('approval records the admin on the submission and published project', async () => {
+  const seed = createSeedData();
+  seed.submissions.unshift(studentSubmission());
+  const app = createApp({ repository: createMemoryRepository(seed) });
+  const admin = request.agent(app);
+  const student = request.agent(app);
+  await admin.post(env.apiPrefix + '/auth/login')
+    .send({ identifier: env.adminEmail, password: env.adminPassword }).expect(200);
+  await student.post(env.apiPrefix + '/auth/login')
+    .send({ identifier: env.studentEmail, password: env.studentPassword }).expect(200);
+
+  const { submission, project } = (await admin.post(env.apiPrefix + '/submissions/102/approve').expect(200)).body.data;
+  assert.equal(submission.approvedBy, seed.users[0].name);
+  assert.equal(submission.approvedById, seed.users[0].id);
+  assert.equal(project.approvedBy, submission.approvedBy);
+  assert.equal(project.approvedById, submission.approvedById);
+  assert.equal(project.approvedAt, submission.moderatedAt);
+  assert.equal((await student.get(env.apiPrefix + '/submissions/mine').expect(200)).body.data.find(item => item.id === 102).approvedBy, seed.users[0].name);
+  assert.equal((await request(app).get(env.apiPrefix + `/projects/${project.id}`).expect(200)).body.data.approvedBy, seed.users[0].name);
+});
+
 test('student can edit only their own pending submission without changing ownership', async () => {
   const seed = createSeedData();
   seed.submissions.unshift(studentSubmission());

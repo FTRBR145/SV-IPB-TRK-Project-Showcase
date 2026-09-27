@@ -15,7 +15,8 @@ export default function ProjectDetailModal({ project, onClose }) {
     ['Dosen pembimbing', project.supervisor],
     ['Semester', project.semester],
     ['Tahun akademik', project.year],
-    ['Tanggal projek', project.date]
+    ['Tanggal projek', project.date],
+    ...(project.approvedBy ? [['Disetujui oleh', project.approvedBy]] : [])
   ];
   return (
     <ModalShell onClose={onClose} ariaLabel={`Detail projek ${project.title}`} panelClassName="project-detail-modal">

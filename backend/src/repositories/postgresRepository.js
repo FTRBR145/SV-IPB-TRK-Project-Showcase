@@ -259,8 +259,11 @@ export function createPostgresRepository(pool) {
         if (!row) return { error: 'not_found' };
         if (row.data.status !== 'pending') return { error: 'invalid_status' };
         const { status: _status, moderatedAt: _moderatedAt, createdAt: _createdAt, ...data } = row.data;
-        const project = await createProject(client, data, actor);
-        const submission = unpack((await client.query('update showcase.submissions set data=data || $2::jsonb, project_id=$3 where id=$1 returning *', [row.id, {status:'approved',moderatedAt:now()}, project.id])).rows[0]);
+        const approvedAt = now();
+        const { actor: approvedBy, actorId: approvedById } = activityActor(actor);
+        const approval = { approvedBy, approvedById };
+        const project = await createProject(client, { ...data, ...approval, approvedAt }, actor);
+        const submission = unpack((await client.query('update showcase.submissions set data=data || $2::jsonb, project_id=$3 where id=$1 returning *', [row.id, { status: 'approved', moderatedAt: approvedAt, ...approval }, project.id])).rows[0]);
         await log(client, `Pengajuan “${submission.title}” dari ${submission.student} disetujui.`, 'success', actor);
         return { submission, project };
       });

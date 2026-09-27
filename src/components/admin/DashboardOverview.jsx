@@ -169,14 +169,18 @@ export default function DashboardOverview({
       label: 'Status',
       weight: 1.3,
       sortable: true,
+      searchValue: row => `${row.status} ${row.approvedBy || ''}`,
       render: (row) => (
-        <span
-          className={`inline-flex items-center whitespace-nowrap rounded-full border px-2 py-1 text-xs font-bold ${
-            statusStyles[row.status] || 'bg-slate-100 text-slate-700'
-          }`}
-        >
-          {statusLabels[row.status] || row.status}
-        </span>
+        <div>
+          <span
+            className={`inline-flex items-center whitespace-nowrap rounded-full border px-2 py-1 text-xs font-bold ${
+              statusStyles[row.status] || 'bg-slate-100 text-slate-700'
+            }`}
+          >
+            {statusLabels[row.status] || row.status}
+          </span>
+          {row.status === 'approved' && <span className="mt-1 block text-xs text-slate-600">{row.approvedBy ? `Oleh ${row.approvedBy}` : 'Penyetuju belum tercatat'}</span>}
+        </div>
       )
     },
     {
@@ -301,7 +305,7 @@ export default function DashboardOverview({
           key={activeAction ? 'moderation-busy' : 'moderation-idle'}
           data={statusFilteredData}
           columns={columns}
-          searchPlaceholder="Cari pengajuan, nama mahasiswa, NIM, atau projek..."
+          searchPlaceholder="Cari projek, mahasiswa, NIM, atau penyetuju..."
           defaultPageSize={10}
           pageSizeOptions={[5, 10, 25, 50, 100]}
           defaultSortKey="date"

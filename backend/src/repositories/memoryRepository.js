@@ -236,6 +236,9 @@ export function createMemoryRepository(initialData = createSeedData()) {
       if (index < 0) return { error: 'not_found' };
       if (state.submissions[index].status !== 'pending') return { error: 'invalid_status' };
       const submission = state.submissions[index];
+      const approvedAt = new Date().toISOString();
+      const { actor: approvedBy, actorId: approvedById } = activityActor(actor);
+      const approval = { approvedBy, approvedById };
       const project = this.createProject({
         title: submission.title,
         student: submission.student,
@@ -251,12 +254,15 @@ export function createMemoryRepository(initialData = createSeedData()) {
         supervisor: submission.supervisor || 'Dosen Pembimbing TRK',
         year: submission.year || state.settings.academicYear,
         date: submission.date,
-        description: submission.description
+        description: submission.description,
+        ...approval,
+        approvedAt
       }, actor);
       state.submissions[index] = {
         ...submission,
         status: 'approved',
-        moderatedAt: new Date().toISOString()
+        moderatedAt: approvedAt,
+        ...approval
       };
       recordActivity(`Pengajuan “${submission.title}” dari ${submission.student} disetujui.`, 'success', actor);
       return { submission: clone(state.submissions[index]), project };
