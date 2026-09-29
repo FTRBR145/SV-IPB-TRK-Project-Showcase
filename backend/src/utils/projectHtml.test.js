@@ -44,6 +44,16 @@ test('server-rendered detail exposes metadata only for public projects', async (
     const hiddenPage = await request(app).get('/project/2').expect(404);
     assert.match(hiddenPage.text, /name="robots" content="noindex"/);
     assert.doesNotMatch(hiddenPage.text, /property="og:title"/);
+    const owner = request.agent(app);
+    await owner.post(env.apiPrefix + '/auth/login').send({ identifier: env.studentEmail, password: env.studentPassword }).expect(200);
+    for (const member of [admin, owner]) {
+      const privatePage = await member.get('/project/2').expect(200);
+      assert.match(privatePage.text, /name="robots" content="noindex"/);
+      assert.doesNotMatch(privatePage.text, /Aplikasi Mobile Smart Home/);
+      assert.doesNotMatch(privatePage.text, /property="og:title"/);
+    }
+    await admin.patch(env.apiPrefix + '/projects/1').send({ isPublished: false }).expect(200);
+    await owner.get('/project/1').expect(404);
     await request(app).get('/project/999').expect(404);
   } finally {
     globalThis.fetch = originalFetch;

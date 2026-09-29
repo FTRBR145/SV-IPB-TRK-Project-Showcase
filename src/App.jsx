@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import Toast from './components/common/Toast';
 import ScrollToTop from './components/common/ScrollToTop';
@@ -40,6 +40,14 @@ function PublicDataFeedback() {
   );
 }
 
+export function ProjectRoute() {
+  const { projectId } = useParams();
+  const { currentUser, isAuthReady } = useApp();
+  if (!isAuthReady) return <RouteLoader />;
+  if (!currentUser) return <Navigate to={`/?project=${encodeURIComponent(projectId)}`} replace state={{ from: `/project/${projectId}` }} />;
+  return <ProjectDetailPage />;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -51,7 +59,7 @@ export default function App() {
             <Routes>
             {/* Landing Public Page */}
             <Route path="/" element={<LandingPage />} />
-            <Route path="/project/:projectId" element={<ProjectDetailPage />} />
+            <Route path="/project/:projectId" element={<ProjectRoute />} />
             <Route path="/account" element={<ProtectedRoute allowedRoles={['student', 'admin', 'lecturer']}><ProfilePage /></ProtectedRoute>} />
 
             {/* Authenticated Student Portal (TRKTube Beranda) */}

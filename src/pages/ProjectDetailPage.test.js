@@ -20,11 +20,11 @@ const h = React.createElement;
 
 afterEach(() => { cleanup(); mock.restoreAll(); });
 
-function showPage(id) {
+function showPage(id, from = '/student') {
   return render(h(AppContext.Provider, { value: {
-    currentUser: null, isLoggedIn: false, logout() {},
+    currentUser: { role: 'student', name: 'Nabila' }, isLoggedIn: true, logout() {},
     adminSettings: { siteName: 'Showcase TRK' }, courses: []
-  } }, h(MemoryRouter, { initialEntries: [`/project/${id}`] },
+  } }, h(MemoryRouter, { initialEntries: [{ pathname: `/project/${id}`, state: { from } }] },
     h(Routes, null, h(Route, { path: '/project/:projectId', element: h(ProjectDetailPage) })))));
 }
 
@@ -36,10 +36,18 @@ test('direct project route loads content and copies its canonical link', async (
   Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { copied.push(text); } } });
   showPage(2);
   assert.ok(await screen.findByRole('heading', { name: 'Sensor Kelas', level: 1 }));
-  assert.equal(document.title, 'Sensor Kelas | Showcase TRK');
+  await waitFor(() => assert.equal(document.title, 'Sensor Kelas | Showcase TRK'));
   screen.getByRole('button', { name: 'Salin tautan' }).click();
   await waitFor(() => assert.equal(copied[0], 'http://localhost/project/2'));
   assert.ok(screen.getByText('Tautan projek tersalin.'));
+  assert.equal(screen.getByRole('link', { name: 'Kembali ke portal' }).getAttribute('href'), '/student');
+});
+
+test('return link keeps portal filters', async () => {
+  mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({ data: { id: 2, title: 'Sensor Kelas', student: 'Nabila' } })));
+  showPage(2, '/student?tab=my-projects&semester=5&search=sensor');
+  assert.ok(await screen.findByRole('heading', { name: 'Sensor Kelas', level: 1 }));
+  assert.equal(screen.getByRole('link', { name: 'Kembali ke portal' }).getAttribute('href'), '/student?tab=my-projects&semester=5&search=sensor');
 });
 
 test('a missing project shows a clear 404 state without stale details', async () => {

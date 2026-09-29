@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Clock, Plus, Search, X } from 'lucide-react';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
@@ -13,7 +13,6 @@ import ProjectDetailModal from '../components/modals/ProjectDetailModal';
 import StudentSidebar from '../components/student/StudentSidebar';
 import EditProjectModal from '../components/admin/EditProjectModal';
 import useApp from '../hooks/useApp';
-import useProjectDetail from '../hooks/useProjectDetail';
 
 
 const SEMESTER_OPTIONS = [1, 2, 3, 4, 5, 6];
@@ -35,14 +34,14 @@ function belongsToStudent(project, student) {
 
 export default function StudentHome() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { projects, ownProjects, catalogStatus, submissions, currentUser, isLoggedIn, logout, courses, showToast, updateSubmission } = useApp();
+  const { projects, ownProjects, catalogStatus, submissions, currentUser, isLoggedIn, logout, courses, updateSubmission } = useApp();
   const isAdminPreview = isAdminAccount(currentUser);
   const studentUser = isStudentAccount(currentUser) ? currentUser : null;
 
   const selectedSemester = searchParams.get('semester') || 'ALL';
   const searchQuery = searchParams.get('search') || '';
-  const publishedDetail = useProjectDetail(searchParams.get('project'), showToast);
   const [visibleProjectCount, setVisibleProjectCount] = useState(PAGE_SIZE);
   const [editingSubmission, setEditingSubmission] = useState(null);
 
@@ -56,6 +55,14 @@ export default function StudentHome() {
       navigate('/', { replace: true });
     }
   }, [currentUser, isLoggedIn, navigate]);
+
+  useEffect(() => {
+    const legacyProjectId = searchParams.get('project');
+    if (!legacyProjectId || !/^\d+$/.test(legacyProjectId)) return;
+    const returnParams = new URLSearchParams(searchParams);
+    returnParams.delete('project');
+    navigate(`/project/${legacyProjectId}`, { replace: true, state: { from: `/student${returnParams.size ? `?${returnParams}` : ''}` } });
+  }, [navigate, searchParams]);
 
   const myPendingSubmissions = useMemo(() => {
     if (!studentUser) return [];
@@ -82,7 +89,7 @@ export default function StudentHome() {
   const pendingId = searchParams.get('submission');
   const activeDetailProject = pendingId
     ? myPendingSubmissions.find(item => String(item.id) === pendingId) ?? null
-    : publishedDetail;
+    : null;
 
   const filteredProjects = useMemo(() => {
     const baseProjects = activeTab === 'my-projects' ? myProjects : projects;
@@ -106,15 +113,15 @@ export default function StudentHome() {
   };
 
   const handleOpenDetail = (project) => {
-    updateParams(params => {
-      params.delete('project');
-      params.delete('submission');
-      params.set(project.isPending ? 'submission' : 'project', project.id);
-    });
+    if (!project.isPending) {
+      navigate(`/project/${project.id}`, { state: { from: `${location.pathname}${location.search}` } });
+      return;
+    }
+    updateParams(params => params.set('submission', project.id));
   };
 
   const handleCloseDetail = () => {
-    updateParams(params => { params.delete('project'); params.delete('submission'); });
+    updateParams(params => params.delete('submission'));
   };
 
   const showAllProjects = () => {

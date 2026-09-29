@@ -16,9 +16,11 @@ import ProjectShowcase from '../components/landing/ProjectShowcase';
 // Modals
 import UploadModal from '../components/modals/UploadModal';
 import LoginModal from '../components/modals/LoginModal';
+import ProjectDetailModal from '../components/modals/ProjectDetailModal';
 
 // App Context
 import useApp from '../hooks/useApp';
+import useProjectDetail from '../hooks/useProjectDetail';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -30,6 +32,8 @@ export default function LandingPage() {
   const [selectedCourse, setSelectedCourse] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const courseFromUrl = searchParams.get('course') || '';
+  const projectId = searchParams.get('project');
+  const activeProjectDetail = useProjectDetail(projectId, showToast);
 
   const handleSelectCourse = (course) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -57,11 +61,6 @@ export default function LandingPage() {
     return () => cancelAnimationFrame(frame);
   }, [location.hash, courseFromUrl]);
 
-  useEffect(() => {
-    const legacyProjectId = searchParams.get('project');
-    if (legacyProjectId) navigate(`/project/${encodeURIComponent(legacyProjectId)}`, { replace: true });
-  }, [navigate, searchParams]);
-
   // Modal States
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -73,7 +72,15 @@ export default function LandingPage() {
   }, [searchParams]);
 
   const handleOpenDetail = (proj) => {
-    navigate(`/project/${proj.id}`);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('project', proj.id);
+    navigate({ pathname: '/', search: nextParams.toString(), hash: location.hash });
+  };
+
+  const handleCloseDetail = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('project');
+    navigate({ pathname: '/', search: nextParams.toString(), hash: location.hash }, { replace: true, state: location.state });
   };
 
   // Filter Projects Logic
@@ -104,9 +111,9 @@ export default function LandingPage() {
     const requestedPath = location.state?.from;
     const canUseRequestedPath =
       typeof requestedPath === 'string' &&
-      (requestedPath.startsWith('/student') || (userRole === 'admin' && requestedPath.startsWith('/admin')));
+      (requestedPath.startsWith('/student') || /^\/project\/\d+$/.test(requestedPath) || (userRole === 'admin' && requestedPath.startsWith('/admin')));
 
-    navigate(canUseRequestedPath ? requestedPath : userRole === 'admin' ? '/admin' : '/student', {
+    navigate(canUseRequestedPath ? requestedPath : projectId && /^\d+$/.test(projectId) ? `/project/${projectId}` : userRole === 'admin' ? '/admin' : '/student', {
       replace: true
     });
   };
@@ -203,6 +210,11 @@ export default function LandingPage() {
         isOpen={isLoginOpen}
         onClose={handleCloseLogin}
         onLoginSuccess={handleLoginSuccess}
+      />
+      <ProjectDetailModal
+        project={activeProjectDetail}
+        onClose={handleCloseDetail}
+        onOpenFullPage={isLoggedIn && activeProjectDetail ? () => navigate(`/project/${activeProjectDetail.id}`) : undefined}
       />
     </div>
   );

@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { env } from './config/env.js';
 import { errorHandler, notFound } from './middleware/errors.js';
 import { loginRateLimit } from './middleware/rateLimit.js';
+import { bestEffortAuthenticate } from './middleware/auth.js';
 import { ApiError } from './utils/http.js';
 import { projectHtml, siteOrigin, unavailableProjectHtml } from './utils/projectHtml.js';
 import apiRoutes from './routes/index.js';
@@ -49,7 +50,7 @@ export function createApp({ repository, loginLimiter = loginRateLimit() } = {}) 
       }
     });
   });
-  app.get('/project/:id', async (request, response, next) => {
+  app.get('/project/:id', bestEffortAuthenticate, async (request, response, next) => {
     if (!/^\d+$/.test(request.params.id)) return next();
     try {
       const project = await repository.findProjectById(request.params.id);
@@ -57,10 +58,12 @@ export function createApp({ repository, loginLimiter = loginRateLimit() } = {}) 
       if (!shell.ok) return response.status(503).send('Halaman belum tersedia.');
       const html = await shell.text();
       const publicProject = project && project.isPublished !== false;
+      const privateProject = project?.isPublished === false &&
+        (request.user?.role === 'admin' || (request.user?.role === 'student' && request.user.nim === project.nim));
       const body = publicProject
         ? projectHtml(html, project, `${siteOrigin}/project/${request.params.id}`)
         : unavailableProjectHtml(html);
-      return response.status(publicProject ? 200 : 404).type('html').set({
+      return response.status(publicProject || privateProject ? 200 : 404).type('html').set({
         'Cache-Control': 'no-store',
         'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data:; connect-src 'self'; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
         'Referrer-Policy': 'strict-origin-when-cross-origin',

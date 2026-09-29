@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Check, Copy, User } from 'lucide-react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 import ProjectDetailContent from '../components/projects/ProjectDetailContent';
@@ -12,6 +12,7 @@ import '../components/modals/ProjectDetailModal.css';
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser, isLoggedIn, logout, adminSettings, courses } = useApp();
   const [requestNumber, setRequestNumber] = useState(0);
   const [result, setResult] = useState({ status: 'loading', project: null });
@@ -54,13 +55,16 @@ export default function ProjectDetailPage() {
   };
 
   const project = result.project;
+  const returnPath = /^\/student(?:\?|$)/.test(location.state?.from || '')
+    ? location.state.from
+    : currentUser?.role === 'student' || currentUser?.role === 'admin' ? '/student' : '/#projects';
   return <div className="app-canvas flex min-h-screen flex-col bg-slate-50">
     <Navbar currentPage="project" currentUser={currentUser} isLoggedIn={isLoggedIn} courses={courses}
       onLogout={logout} onBackToLanding={() => navigate('/#projects')}
       onOpenLogin={() => navigate('/?login=required')}
       onNavigateToAdmin={() => navigate('/admin')} onNavigateToStudent={() => navigate('/student')} />
     <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
-      <Link to="/#projects" className="mb-8 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-slate-700 hover:text-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><ArrowLeft size={18} aria-hidden="true" />Kembali ke katalog</Link>
+      <Link to={returnPath} className="mb-8 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-slate-700 hover:text-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><ArrowLeft size={18} aria-hidden="true" />{returnPath.startsWith('/student') ? 'Kembali ke portal' : 'Kembali ke katalog'}</Link>
       {result.status === 'loading' && <p role="status" className="py-24 text-center text-slate-600">Memuat detail projek...</p>}
       {result.status === 'not-found' && <div className="py-24 text-center"><h1 className="font-heading text-3xl font-semibold text-slate-900">Projek tidak ditemukan</h1><p className="mt-3 text-slate-600">Projek ini mungkin sudah dihapus atau tidak ditayangkan.</p></div>}
       {result.status === 'error' && <div className="py-24 text-center"><h1 className="font-heading text-3xl font-semibold text-slate-900">Detail projek belum dapat dimuat</h1><p className="mt-3 text-slate-600">Periksa koneksi lalu coba kembali.</p><button type="button" onClick={() => setRequestNumber(value => value + 1)} className="mt-6 min-h-11 rounded-lg bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800">Coba lagi</button></div>}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowUpRight, Clock, Play, ImageOff, Pencil } from 'lucide-react';
+import { ArrowUpRight, Clock, Play, ImageOff, Pencil, EyeOff } from 'lucide-react';
 import { getYouTubeThumbnail } from '../../data/projectsData';
 import { courseLabel } from '../../utils/courseLabel';
 import { isUnavailableThumbnail } from '../../utils/studentFeed';
