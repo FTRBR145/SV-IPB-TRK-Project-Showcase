@@ -36,7 +36,7 @@ export default function StudentProjectCard({ project, isOwner, onOpen, onEdit })
         <ProjectCover key={src} src={src} automatic={!project.thumbnail} project={project} />
         <div className="student-project-copy">
           <div className="student-project-meta"><span>Semester {project.semester}</span>
-            {pending ? <span className="student-pending"><Clock size={13} aria-hidden="true" /> Menunggu persetujuan</span> : isOwner && <span>Projek saya · Terbit</span>}
+            {pending ? <span className="student-pending"><Clock size={13} aria-hidden="true" /> Menunggu persetujuan</span> : project.isPublished === false ? <span className="student-pending"><EyeOff size={13} aria-hidden="true" /> Tidak tayang</span> : isOwner && <span>Projek saya · Terbit</span>}
           </div>
           <h2>{project.title}</h2>
           <p className="student-project-author">{project.student}</p>

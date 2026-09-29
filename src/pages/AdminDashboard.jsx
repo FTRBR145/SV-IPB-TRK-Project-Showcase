@@ -40,7 +40,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const {
-    projects,
+    managedProjects: projects,
     studentAccounts,
     currentUser,
     isLoggedIn,
@@ -56,6 +56,7 @@ export default function AdminDashboard() {
     restoreSubmission,
     deleteProject,
     deleteProjects,
+    updateProject,
     addModerator,
     toggleModerator,
     deleteModerator,
@@ -109,6 +110,7 @@ export default function AdminDashboard() {
             onEdit={setEditingProject}
             onDelete={deleteProject}
             onDeleteMany={deleteProjects}
+            onTogglePublication={(project) => updateProject(project.id, { isPublished: project.isPublished === false })}
             onView={setPreviewProject}
           />
         );

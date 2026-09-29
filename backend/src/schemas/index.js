@@ -48,6 +48,7 @@ export const projectSchema = z.object({
 
 export const projectUpdateSchema = projectSchema
   .partial()
+  .extend({ isPublished: z.boolean().optional() })
   .refine((value) => Object.keys(value).length > 0, 'Minimal satu perubahan wajib dikirim.');
 
 export const submissionUpdateSchema = projectSchema

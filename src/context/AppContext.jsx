@@ -17,6 +17,8 @@ const DEFAULT_COURSES = SV_COURSES.filter((course) => course !== 'Semua Mata Kul
 export function AppProvider({ children }) {
   const [studentAccounts, setStudentAccounts] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [managedProjects, setManagedProjects] = useState([]);
+  const [ownProjects, setOwnProjects] = useState([]);
   const [catalogStatus, setCatalogStatus] = useState('loading');
   const catalogController = useRef(null);
   const [publicDataError, setPublicDataError] = useState(false);
@@ -95,12 +97,14 @@ export function AppProvider({ children }) {
 
   const loadPrivateData = useCallback(async (role, signal) => {
     if (role === 'admin') {
-      const [submissionResponse, moderatorResponse, logResponse, studentResponse] = await Promise.all([
+      const [submissionResponse, moderatorResponse, logResponse, studentResponse, projectResponse] = await Promise.all([
         apiRequest('/submissions', { signal }),
         apiRequest('/moderators', { signal }),
         apiRequest('/activity-logs', { signal }),
-        apiRequest('/students', { signal })
+        apiRequest('/students', { signal }),
+        loadProjectCatalog({ signal, scope: 'all' })
       ]);
+      setManagedProjects(projectResponse);
       setStudentAccounts(studentResponse);
       setSubmissions(submissionResponse);
       setModerators(moderatorResponse);
@@ -109,12 +113,18 @@ export function AppProvider({ children }) {
     }
 
     if (role === 'student') {
-      const ownSubmissions = await apiRequest('/submissions/mine', { signal });
+      const [ownSubmissions, ownProjectResponse] = await Promise.all([
+        apiRequest('/submissions/mine', { signal }),
+        loadProjectCatalog({ signal, scope: 'mine' })
+      ]);
       setSubmissions(ownSubmissions);
+      setOwnProjects(ownProjectResponse);
     }
     setStudentAccounts([]);
     setModerators([]);
     setActivityLogs([]);
+    setManagedProjects([]);
+    if (role !== 'student') setOwnProjects([]);
   }, []);
 
   const refreshActivityLogs = useCallback(async () => {
@@ -134,6 +144,8 @@ export function AppProvider({ children }) {
     setStudentAccounts([]);
     setModerators([]);
     setActivityLogs([]);
+    setManagedProjects([]);
+    setOwnProjects([]);
   }, []);
 
   const reportApiError = useCallback((error, fallbackMessage) => {
@@ -248,6 +260,7 @@ export function AppProvider({ children }) {
         showToast('Projek dikirim dan menunggu persetujuan admin.', 'info');
       } else {
         setProjects((previous) => [result.item, ...previous]);
+        setManagedProjects((previous) => [result.item, ...previous]);
         showToast('Video projek berhasil disimpan dan dipublikasikan!');
       }
       if (currentUser?.role === 'admin') await refreshActivityLogs();
@@ -264,7 +277,12 @@ export function AppProvider({ children }) {
         method: 'PATCH',
         body: updates
       });
-      setProjects((previous) => previous.map((item) => item.id === project.id ? project : item));
+      setProjects((previous) => project.isPublished === false
+        ? previous.filter((item) => item.id !== project.id)
+        : previous.some((item) => item.id === project.id)
+          ? previous.map((item) => item.id === project.id ? project : item)
+          : [project, ...previous]);
+      setManagedProjects((previous) => previous.map((item) => item.id === project.id ? project : item));
       await refreshActivityLogs();
       showToast('Perubahan projek berhasil disimpan.');
       return project;
@@ -277,6 +295,7 @@ export function AppProvider({ children }) {
     try {
       await apiRequest(`/projects/${projectId}`, { method: 'DELETE' });
       setProjects((previous) => previous.filter((project) => project.id !== projectId));
+      setManagedProjects((previous) => previous.filter((project) => project.id !== projectId));
       await refreshActivityLogs();
       showToast('Projek berhasil dihapus.', 'info');
       return true;
@@ -292,6 +311,7 @@ export function AppProvider({ children }) {
         item.id === result.submission.id ? result.submission : item
       ));
       setProjects((previous) => [result.project, ...previous]);
+      setManagedProjects((previous) => [result.project, ...previous]);
       await refreshActivityLogs();
       showToast(`Projek dari ${result.submission.student} berhasil disetujui dan dipublikasikan!`);
       return true;
@@ -383,6 +403,7 @@ export function AppProvider({ children }) {
       const result = await apiRequest('/projects/bulk-delete', { method: 'POST', body: { ids: projectIds } });
       const deletedIds = new Set(result.ids);
       setProjects((previous) => previous.filter((project) => !deletedIds.has(project.id)));
+      setManagedProjects((previous) => previous.filter((project) => !deletedIds.has(project.id)));
       await refreshActivityLogs();
       showToast(`${result.deletedCount} projek berhasil dihapus.`, 'info');
       return true;
@@ -448,6 +469,8 @@ export function AppProvider({ children }) {
       });
       setCourses((previous) => previous.map((course) => course === courseName ? result.name : course));
       setProjects((previous) => previous.map((project) => project.course === courseName ? { ...project, course: result.name } : project));
+      setManagedProjects((previous) => previous.map((project) => project.course === courseName ? { ...project, course: result.name } : project));
+      setOwnProjects((previous) => previous.map((project) => project.course === courseName ? { ...project, course: result.name } : project));
       setSubmissions((previous) => previous.map((submission) => submission.course === courseName ? { ...submission, course: result.name } : submission));
       await refreshActivityLogs();
       showToast('Nama mata kuliah berhasil diperbarui.');
@@ -495,6 +518,8 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider value={{
       projects,
+      managedProjects,
+      ownProjects,
       catalogStatus,
       refreshCatalog,
       publicDataError,

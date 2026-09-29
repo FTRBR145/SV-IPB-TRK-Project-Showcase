@@ -110,7 +110,7 @@ export default function Navbar({
             alt="IPB University Sekolah Vokasi Logo"
             className="h-9 max-w-[145px] object-contain sm:h-14 sm:max-w-[270px]"
           />
-          {!isLanding && <span className="hidden border-l border-slate-200 pl-3 text-sm font-semibold text-slate-600 md:inline">{currentPage === 'account' ? 'Akun Saya' : currentPage === 'admin' ? 'Admin' : 'Mahasiswa'}</span>}
+          {!isLanding && <span className="hidden border-l border-slate-200 pl-3 text-sm font-semibold text-slate-600 md:inline">{currentPage === 'account' ? 'Akun Saya' : currentPage === 'admin' ? 'Admin' : currentPage === 'project' ? 'Detail Projek' : 'Mahasiswa'}</span>}
         </button>
 
         {/* =================================================================== */}

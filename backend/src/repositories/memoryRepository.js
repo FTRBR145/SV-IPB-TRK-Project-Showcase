@@ -48,7 +48,7 @@ export function createMemoryRepository(initialData = createSeedData()) {
     },
     getPublicStatistics() {
       return {
-        projects: state.projects.length,
+        projects: state.projects.filter(project => project.isPublished !== false).length,
         students: state.users.filter(user => user.role === 'student').length,
         courses: state.courses.length,
         lecturers: state.moderators.filter(moderator => moderator.role === 'lecturer').length
@@ -116,9 +116,10 @@ export function createMemoryRepository(initialData = createSeedData()) {
       return state.users.find((user) => user.id === Number(id) && (user.status || 'active') === 'active') || null;
     },
 
-    listProjects({ search = '', course, semester, nim, page = 1, limit = 12 } = {}) {
+    listProjects({ search = '', course, semester, nim, scope = 'public', page = 1, limit = 12 } = {}) {
       const query = search.trim().toLocaleLowerCase('id-ID');
       const filtered = state.projects.filter((project) => {
+        if (scope === 'public' && project.isPublished === false) return false;
         if (course && project.course !== course) return false;
         if (semester && String(project.semester) !== String(semester)) return false;
         if (nim && project.nim !== nim) return false;
@@ -147,6 +148,7 @@ export function createMemoryRepository(initialData = createSeedData()) {
       const timestamp = new Date().toISOString();
       const project = {
         ...clone(data),
+        isPublished: true,
         id: nextId(state.projects),
         comments: data.comments || [],
         createdAt: timestamp,

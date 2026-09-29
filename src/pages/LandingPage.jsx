@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../landing.css';
-import { useLocation, useNavigate, useSearchParams, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 // Common Components
 import Navbar from '../components/common/Navbar';
@@ -14,19 +14,16 @@ import MataKuliahSection from '../components/landing/MataKuliahSection';
 import ProjectShowcase from '../components/landing/ProjectShowcase';
 
 // Modals
-import ProjectDetailModal from '../components/modals/ProjectDetailModal';
 import UploadModal from '../components/modals/UploadModal';
 import LoginModal from '../components/modals/LoginModal';
 
 // App Context
 import useApp from '../hooks/useApp';
-import useProjectDetail from '../hooks/useProjectDetail';
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { projectId } = useParams();
   const { projects, catalogStatus, currentUser, isLoggedIn, logout, adminSettings, showToast, courses } = useApp();
 
   const [selectedSemester, setSelectedSemester] = useState('ALL');
@@ -60,8 +57,12 @@ export default function LandingPage() {
     return () => cancelAnimationFrame(frame);
   }, [location.hash, courseFromUrl]);
 
+  useEffect(() => {
+    const legacyProjectId = searchParams.get('project');
+    if (legacyProjectId) navigate(`/project/${encodeURIComponent(legacyProjectId)}`, { replace: true });
+  }, [navigate, searchParams]);
+
   // Modal States
-  const activeProjectDetail = useProjectDetail(projectId || searchParams.get('project'), showToast);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
@@ -71,17 +72,8 @@ export default function LandingPage() {
     }
   }, [searchParams]);
 
-  const handleCloseDetail = () => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete('project');
-    if (projectId) navigate({ pathname: '/', search: nextParams.toString() }, { replace: true });
-    else setSearchParams(nextParams, { replace: true });
-  };
-
   const handleOpenDetail = (proj) => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set('project', proj.id);
-    setSearchParams(nextParams);
+    navigate(`/project/${proj.id}`);
   };
 
   // Filter Projects Logic
@@ -202,13 +194,6 @@ export default function LandingPage() {
       <Footer />
 
       {/* Modals */}
-      {activeProjectDetail && (
-        <ProjectDetailModal
-          project={activeProjectDetail}
-          onClose={handleCloseDetail}
-        />
-      )}
-
       <UploadModal
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}

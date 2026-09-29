@@ -74,10 +74,11 @@ function BulkSelectionBar({ items, selectedIds, setSelectedIds, isDeleting, onDe
 // ============================================================================
 // 1. PROJECTS PANEL (WITH DATATABLE)
 // ============================================================================
-export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, onDeleteMany, onView }) {
+export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, onDeleteMany, onTogglePublication, onView }) {
   const [semesterFilter, setSemesterFilter] = useState('ALL');
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const filteredProjects = useMemo(() => {
@@ -157,6 +158,9 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
           <strong className="block text-slate-900 font-bold leading-snug ">
             {row.title}
           </strong>
+          <span className={`mt-1 inline-block rounded px-2 py-0.5 text-xs font-semibold ${row.isPublished === false ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'}`}>
+            {row.isPublished === false ? 'Disembunyikan' : 'Tayang'}
+          </span>
           <span className="mt-0.5 block  text-xs text-slate-600">
             {courseLabel(row.course)}
           </span>
@@ -241,6 +245,20 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
           </button>
           <button
             type="button"
+            disabled={togglingId === row.id}
+            onClick={async () => {
+              if (togglingId !== null) return;
+              setTogglingId(row.id);
+              try { await onTogglePublication(row); } finally { setTogglingId(null); }
+            }}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-slate-100 p-2.5 text-slate-700 transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 disabled:opacity-50"
+            title={row.isPublished === false ? 'Tayangkan projek' : 'Sembunyikan projek'}
+            aria-label={`${row.isPublished === false ? 'Tayangkan' : 'Sembunyikan'} projek ${row.title}`}
+          >
+            {row.isPublished === false ? <Eye size={16} /> : <EyeOff size={16} />}
+          </button>
+          <button
+            type="button"
             onClick={() => setDeleteTarget({ kind: 'single', item: row })}
             className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-rose-50 p-2.5 text-rose-700 shadow-2xs transition-colors hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
             title="Hapus Projek"
@@ -305,7 +323,7 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
             Manajemen Seluruh Projek ({projects.length})
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Cari, sortir kolom, dan kelola projek yang aktif terpublikasi di showcase.
+            Cari, sortir, dan atur projek yang tampil di showcase.
           </p>
         </div>
       </div>

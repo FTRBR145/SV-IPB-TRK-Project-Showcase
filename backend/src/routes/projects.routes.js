@@ -1,19 +1,30 @@
 import { Router } from 'express';
-import { authenticate, authorize, optionalAuthenticate } from '../middleware/auth.js';
+import { authenticate, authorize, bestEffortAuthenticate, optionalAuthenticate } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { bulkDeleteSchema, projectSchema, projectUpdateSchema } from '../schemas/index.js';
 import { ApiError, sendData } from '../utils/http.js';
 
 const router = Router();
 
-router.get('/', async (request, response) => {
-  const { items, ...meta } = await request.app.locals.repository.listProjects(request.query);
+router.get('/', bestEffortAuthenticate, async (request, response) => {
+  const scope = request.query.scope || 'public';
+  if (!['public', 'all', 'mine'].includes(scope)) throw new ApiError(400, 'INVALID_SCOPE', 'Cakupan projek tidak valid.');
+  if (scope === 'all' && request.user?.role !== 'admin') throw new ApiError(403, 'FORBIDDEN', 'Akses daftar semua projek hanya untuk admin.');
+  if (scope === 'mine' && request.user?.role !== 'student') throw new ApiError(403, 'FORBIDDEN', 'Akses projek pribadi hanya untuk mahasiswa.');
+  const { items, ...meta } = await request.app.locals.repository.listProjects({
+    ...request.query,
+    scope,
+    nim: scope === 'mine' ? request.user.nim : request.query.nim
+  });
   sendData(response, items, 200, meta);
 });
 
-router.get('/:id', async (request, response) => {
+router.get('/:id', bestEffortAuthenticate, async (request, response) => {
   const project = await request.app.locals.repository.findProjectById(request.params.id);
-  if (!project) throw new ApiError(404, 'PROJECT_NOT_FOUND', 'Projek tidak ditemukan.');
+  if (!project || (project.isPublished === false && request.user?.role !== 'admin' &&
+    !(request.user?.role === 'student' && request.user.nim === project.nim))) {
+    throw new ApiError(404, 'PROJECT_NOT_FOUND', 'Projek tidak ditemukan.');
+  }
   sendData(response, project);
 });
 

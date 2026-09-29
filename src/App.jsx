@@ -9,6 +9,7 @@ import { ROUTE_ACCESS } from './utils/accessControl';
 import useApp from './hooks/useApp';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
+const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage'));
 const StudentHome = lazy(() => import('./pages/StudentHome'));
 const UploadProjectPage = lazy(() => import('./pages/UploadProjectPage'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
@@ -50,7 +51,7 @@ export default function App() {
             <Routes>
             {/* Landing Public Page */}
             <Route path="/" element={<LandingPage />} />
-            <Route path="/project/:projectId" element={<LandingPage />} />
+            <Route path="/project/:projectId" element={<ProjectDetailPage />} />
             <Route path="/account" element={<ProtectedRoute allowedRoles={['student', 'admin', 'lecturer']}><ProfilePage /></ProtectedRoute>} />
 
             {/* Authenticated Student Portal (TRKTube Beranda) */}

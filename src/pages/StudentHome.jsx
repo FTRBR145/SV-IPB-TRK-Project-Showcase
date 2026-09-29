@@ -36,7 +36,7 @@ function belongsToStudent(project, student) {
 export default function StudentHome() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { projects, catalogStatus, submissions, currentUser, isLoggedIn, logout, courses, showToast, updateSubmission } = useApp();
+  const { projects, ownProjects, catalogStatus, submissions, currentUser, isLoggedIn, logout, courses, showToast, updateSubmission } = useApp();
   const isAdminPreview = isAdminAccount(currentUser);
   const studentUser = isStudentAccount(currentUser) ? currentUser : null;
 
@@ -72,10 +72,7 @@ export default function StudentHome() {
       }));
   }, [submissions, studentUser]);
 
-  const myPublishedProjects = useMemo(
-    () => projects.filter((project) => belongsToStudent(project, studentUser)),
-    [projects, studentUser]
-  );
+  const myPublishedProjects = studentUser ? ownProjects : [];
 
   const myProjects = useMemo(
     () => [...myPendingSubmissions, ...myPublishedProjects],

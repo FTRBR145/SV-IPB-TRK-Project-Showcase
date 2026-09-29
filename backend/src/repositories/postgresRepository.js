@@ -33,7 +33,7 @@ export function createPostgresRepository(pool) {
   };
   const createProject = async (client, data, actor) => {
     const timestamp = now();
-    const project = await insert(client, 'projects', { ...data, comments: data.comments || [], createdAt: timestamp, updatedAt: timestamp });
+    const project = await insert(client, 'projects', { ...data, isPublished: true, comments: data.comments || [], createdAt: timestamp, updatedAt: timestamp });
     await log(client, `Projek “${project.title}” dipublikasikan.`, 'project', actor);
     return project;
   };
@@ -57,7 +57,7 @@ export function createPostgresRepository(pool) {
     },
     async getPublicStatistics() {
       const [statistics] = await rows(`select
-        (select count(*)::integer from showcase.projects) as projects,
+        (select count(*)::integer from showcase.projects where data->>'isPublished' is distinct from 'false') as projects,
         (select count(*)::integer from showcase.users where data->>'role'='student') as students,
         (select count(*)::integer from showcase.courses) as courses,
         (select count(*)::integer from showcase.moderators where data->>'role'='lecturer') as lecturers`);
@@ -171,8 +171,9 @@ export function createPostgresRepository(pool) {
     },
     findProjectById: id => find('projects', id),
     findSubmissionById: id => find('submissions', id),
-    async listProjects({ search = '', course, semester, nim, page = 1, limit = 12 } = {}) {
+    async listProjects({ search = '', course, semester, nim, scope = 'public', page = 1, limit = 12 } = {}) {
       const filters = []; const values = [];
+      if (scope === 'public') filters.push("data->>'isPublished' is distinct from 'false'");
       for (const [key, value] of Object.entries({ course, semester, nim })) {
         if (value) { values.push(String(value)); filters.push(`data->>'${key}'=$${values.length}`); }
       }

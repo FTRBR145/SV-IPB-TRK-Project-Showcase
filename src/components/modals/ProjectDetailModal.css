@@ -14,7 +14,7 @@
 .project-detail-video { aspect-ratio: 16 / 9; width: 100%; overflow: hidden; border-radius: 0.75rem; background: #0f172a; }
 .project-detail-video iframe { display: block; width: 100%; height: 100%; border: 0; }
 .project-detail-video-empty { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0.75rem; color: #cbd5e1; font-size: 0.875rem; }
-.project-detail-modal h3 { margin: 0 0 1rem; font-size: 0.9375rem; font-weight: 700; line-height: 1.5; }
+.project-detail-content h2, .project-detail-content h3 { margin: 0 0 1rem; font-size: 0.9375rem; font-weight: 700; line-height: 1.5; }
 .project-detail-description { margin-top: 1.75rem; }
 .project-detail-description a { color: #0369a1; text-decoration: underline; text-underline-offset: 0.2em; }
 .project-detail-description a:hover { color: #075985; }
@@ -30,6 +30,9 @@
 .project-detail-status { display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; margin-bottom: 1.5rem; border: 1px solid #fde68a; border-radius: 0.5rem; background: #fffbeb; color: #92400e; font-size: 0.8125rem; line-height: 1.6; }
 .project-detail-status svg { flex-shrink: 0; margin-top: 0.125rem; }
 .project-detail-status strong { display: block; font-weight: 650; }
+.project-detail-page .project-detail-content h2 { font-size: 1.125rem; color: var(--ui-ink); }
+.project-detail-page .project-detail-description p { max-width: 75ch; font-size: 1rem; }
+.project-detail-page .project-detail-info { border-color: var(--ui-border); }
 @media (max-width: 767px) {
   .project-detail-modal { max-height: calc(100dvh - 1.5rem); }
   .project-detail-header { padding: 1rem; }
