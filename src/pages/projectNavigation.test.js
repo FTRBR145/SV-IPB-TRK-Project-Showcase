@@ -24,7 +24,7 @@ dom.window.HTMLElement.prototype.getClientRects = function () {
 };
 
 const { default: React } = await import('react');
-const { render, screen, waitFor, cleanup, act } = await import('@testing-library/react');
+const { render, screen, within, waitFor, cleanup, act } = await import('@testing-library/react');
 const { default: userEvent } = await import('@testing-library/user-event');
 const { MemoryRouter, Route, Routes, useLocation } = await import('react-router-dom');
 const { default: AppContext } = await import('../context/AppContextStore.js');
@@ -33,7 +33,7 @@ const { default: LandingPage } = await import('./LandingPage.jsx');
 const { default: StudentHome } = await import('./StudentHome.jsx');
 const h = React.createElement;
 const publicProject = { id: 2, title: 'Sensor Kelas', student: 'Nabila', nim: 'J0304211015', semester: 5, course: 'APLIKASI MOBILE', techStack: [] };
-const hiddenProject = { ...publicProject, id: 3, title: 'Sensor Privat', isPublished: false };
+const hiddenProject = { ...publicProject, id: 3, title: 'Sensor Privat', isPublished: false, publicationReason: 'Perlu memperbaiki tautan video.' };
 const pendingProject = { ...publicProject, id: 4, title: 'Sensor Menunggu', status: 'pending' };
 
 function LocationProbe() {
@@ -41,13 +41,13 @@ function LocationProbe() {
   return h('output', { 'data-testid': 'location' }, `${location.pathname}${location.search}|${location.state?.from || ''}`);
 }
 
-function showPage(page, initialPath, authenticated = false) {
+function showPage(page, initialPath, authenticated = false, actions = {}) {
   const user = authenticated ? { role: 'student', name: 'Nabila', nim: 'J0304211015' } : null;
   return render(h(AppContext.Provider, { value: {
     currentUser: user, isLoggedIn: authenticated, isAuthReady: true,
     projects: [publicProject], ownProjects: [publicProject, hiddenProject], submissions: [pendingProject],
     catalogStatus: 'ready', courses: [], adminSettings: { siteName: 'Showcase TRK' },
-    showToast() {}, logout() {}, updateSubmission() {}
+    showToast() {}, logout() {}, updateSubmission() {}, ...actions
   } }, h(MemoryRouter, { initialEntries: [initialPath] }, h(React.Fragment, null,
     h(Routes, null,
       h(Route, { path: '/', element: page === 'landing' || page === 'gate' ? h(LandingPage) : h('p', null, 'Landing') }),
@@ -96,4 +96,34 @@ test('student cards open full page for approved projects and modal for pending s
   await user.click(screen.getByRole('button', { name: 'Lihat detail Sensor Menunggu' }));
   assert.ok(await screen.findByRole('dialog', { name: 'Detail projek Sensor Menunggu' }));
   assert.equal(screen.getByTestId('location').textContent, '/student?tab=my-projects&semester=5&submission=4|');
+});
+
+test('Projek Saya offers edit, publication, deletion, and pending cancellation with admin hide respected', async () => {
+  const calls = [];
+  const user = userEvent.setup();
+  showPage('student', '/student?tab=my-projects', true, {
+    updateProject: async (id, data) => { calls.push(['update', id, data]); return true; },
+    deleteProject: async (id) => { calls.push(['delete', id]); return true; },
+    deletePendingSubmission: async (id) => { calls.push(['cancel', id]); return true; }
+  });
+  const publicCard = screen.getByRole('button', { name: 'Lihat detail Sensor Kelas' }).closest('article');
+  const hiddenCard = screen.getByRole('button', { name: 'Lihat detail Sensor Privat' }).closest('article');
+  const pendingCard = screen.getByRole('button', { name: 'Lihat detail Sensor Menunggu' }).closest('article');
+  assert.ok(within(hiddenCard).getByText('Disembunyikan admin'));
+  assert.ok(within(hiddenCard).getByText(/Perlu memperbaiki tautan video/));
+  assert.equal(within(hiddenCard).queryByRole('button', { name: 'Tayangkan' }), null);
+
+  await user.click(within(publicCard).getByRole('button', { name: 'Edit projek' }));
+  assert.ok(await screen.findByRole('dialog', { name: 'Edit projek Sensor Kelas' }));
+  await user.click(screen.getByRole('button', { name: 'Tutup modal edit projek' }));
+  await user.click(within(publicCard).getByRole('button', { name: 'Sembunyikan' }));
+  assert.deepEqual(calls[0], ['update', 2, { isPublished: false }]);
+
+  await user.click(within(pendingCard).getByRole('button', { name: 'Batalkan pengajuan' }));
+  await user.click(within(await screen.findByRole('dialog', { name: 'Batalkan pengajuan?' })).getByRole('button', { name: 'Batalkan pengajuan' }));
+  assert.deepEqual(calls[1], ['cancel', 4]);
+
+  await user.click(within(publicCard).getByRole('button', { name: 'Hapus projek' }));
+  await user.click(within(await screen.findByRole('dialog', { name: 'Hapus projek permanen?' })).getByRole('button', { name: 'Hapus projek' }));
+  assert.deepEqual(calls[2], ['delete', 2]);
 });

@@ -50,11 +50,13 @@ Ubah semua kredensial dan `JWT_SECRET` melalui `.env` sebelum deployment.
 | `POST` | `/api/auth/logout` | Login/Publik | Menghapus cookie sesi, termasuk cookie kedaluwarsa/tidak valid |
 | `GET` | `/api/auth/me` | Publik | Profil pengguna aktif, atau `null` untuk pengunjung tanpa sesi |
 | `GET` | `/api/projects` | Publik | Daftar, pencarian, filter, pagination projek |
-| `GET` | `/api/projects/:id` | Publik | Detail projek |
+| `GET` | `/api/projects/:id` | Publik/pemilik/Admin | Detail projek; projek tersembunyi hanya untuk pemilik dan admin |
 | `POST` | `/api/projects` | Mahasiswa/Admin | Upload projek atau kirim ke moderasi |
-| `PATCH` | `/api/projects/:id` | Admin | Edit projek |
-| `DELETE` | `/api/projects/:id` | Admin | Hapus projek |
+| `PATCH` | `/api/projects/:id` | Admin/pemilik | Edit projek dan status tayang; mahasiswa hanya dapat mengubah isi projek sendiri, tidak dapat menayangkan projek yang disembunyikan admin |
+| `DELETE` | `/api/projects/:id` | Admin/pemilik | Hapus projek permanen |
 | `GET` | `/api/submissions/mine` | Mahasiswa | Riwayat pengajuan sendiri |
+| `PATCH` | `/api/submissions/:id` | Pemilik | Edit pengajuan yang masih menunggu |
+| `DELETE` | `/api/submissions/:id` | Pemilik | Batalkan pengajuan yang masih menunggu |
 | `GET` | `/api/submissions` | Admin | Antrean dan histori moderasi |
 | `POST` | `/api/submissions/:id/approve` | Admin | Setujui dan publikasikan |
 | `POST` | `/api/submissions/:id/reject` | Admin | Tolak pengajuan |
@@ -64,6 +66,8 @@ Ubah semua kredensial dan `JWT_SECRET` melalui `.env` sebelum deployment.
 | `GET/PATCH` | `/api/settings` | Admin | Pengaturan sistem |
 | `GET/DELETE` | `/api/activity-logs` | Admin | Log aktivitas |
 | `POST` | `/api/system/reset` | Admin | Reset seed pada mode memory saja; Postgres menolak |
+
+Admin dapat menyertakan `publicationReason` (maksimal 500 karakter) saat menyembunyikan projek. Aksi di dashboard mewajibkan alasan; projek tersembunyi lama tanpa alasan tetap terkunci untuk admin. Edit mahasiswa langsung berlaku dan perbandingan field disimpan di log aktivitas admin (maksimal 200 entri).
 
 Browser harus mengirim request dengan kredensial agar cookie sesi ikut terkirim. Cookie memakai `HttpOnly`, `SameSite=Lax`, `Secure` di production, dan tidak pernah dikembalikan di body respons login. `AUTH_COOKIE_MAX_AGE_MS` sebaiknya disamakan dengan `JWT_EXPIRES_IN`.
 

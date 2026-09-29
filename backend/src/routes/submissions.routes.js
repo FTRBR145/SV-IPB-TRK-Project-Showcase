@@ -32,6 +32,19 @@ router.patch('/:id', authorize('student'), validate(submissionUpdateSchema), asy
   sendData(response, result.submission);
 });
 
+router.delete('/:id', authorize('student'), async (request, response) => {
+  const result = await request.app.locals.repository.deletePendingSubmission(
+    request.params.id, request.user.nim, request.user
+  );
+  if (result.error === 'not_found') {
+    throw new ApiError(404, 'SUBMISSION_NOT_FOUND', 'Pengajuan tidak ditemukan atau bukan milik Anda.');
+  }
+  if (result.error === 'invalid_status') {
+    throw new ApiError(409, 'INVALID_SUBMISSION_STATUS', 'Hanya pengajuan yang masih menunggu persetujuan yang dapat dibatalkan.');
+  }
+  sendData(response, result.submission);
+});
+
 function resolveModerationResult(result, response, status = 200) {
   if (result.error === 'not_found') throw new ApiError(404, 'SUBMISSION_NOT_FOUND', 'Pengajuan tidak ditemukan.');
   if (result.error === 'invalid_status') {

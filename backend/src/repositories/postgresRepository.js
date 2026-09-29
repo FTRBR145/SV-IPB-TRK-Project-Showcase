@@ -1,4 +1,4 @@
-import { activityActor, studentActivity, settingsActivity } from '../utils/activity.js';
+import { activityActor, studentActivity, settingsActivity, prepareProjectUpdate } from '../utils/activity.js';
 import { ApiError } from '../utils/http.js';
 
 const entityTables = ['users', 'projects', 'submissions', 'moderators', 'activity_logs'];
@@ -26,8 +26,8 @@ export function createPostgresRepository(pool) {
     const { id: _id, ...document } = data;
     return unpack((await client.query(`insert into showcase.${table}(data) values ($1) returning *`, [document])).rows[0]);
   };
-  const log = async (client, message, type = 'info', actor = 'Sistem') => {
-    const entry = await insert(client, 'activity_logs', { message, type, ...activityActor(actor), timestamp: now() });
+  const log = async (client, message, type = 'info', actor = 'Sistem', details = {}) => {
+    const entry = await insert(client, 'activity_logs', { message, type, ...details, ...activityActor(actor), timestamp: now() });
     await client.query('delete from showcase.activity_logs where id in (select id from showcase.activity_logs order by id desc offset 200)');
     return entry;
   };
@@ -196,14 +196,21 @@ export function createPostgresRepository(pool) {
     async updateProject(id, updates, actor) {
       return transaction(async client => {
         const { id: _id, ...safeUpdates } = updates;
-        const project = unpack((await client.query('update showcase.projects set data=data || $2::jsonb where id=$1 returning *', [asId(id), { ...safeUpdates, updatedAt: now() }])).rows[0]);
-        if (project) await log(client, `Projek “${project.title}” diperbarui.`, 'project', actor);
+        const row = (await client.query('select * from showcase.projects where id=$1 for update', [asId(id)])).rows[0];
+        if (!row) return null;
+        const prepared = prepareProjectUpdate(row.data, safeUpdates, actor);
+        if (prepared.error === 'not_found') return null;
+        if (prepared.error) return prepared;
+        const project = unpack((await client.query('update showcase.projects set data=data || $2::jsonb where id=$1 returning *', [row.id, { ...prepared.updates, updatedAt: now() }])).rows[0]);
+        await log(client, `Projek “${project.title}” diperbarui.`, 'project', actor,
+          prepared.changes && Object.keys(prepared.changes).length ? { projectId: project.id, changes: prepared.changes } : {});
         return project;
       });
     },
     async deleteProject(id, actor) {
       return transaction(async client => {
-        const project = unpack((await client.query('delete from showcase.projects where id=$1 returning *', [asId(id)])).rows[0]);
+        const ownerNim = actor?.role === 'student' ? String(actor.nim || '') : null;
+        const project = unpack((await client.query("delete from showcase.projects where id=$1 and ($2::text is null or data->>'nim'=$2) returning *", [asId(id), ownerNim])).rows[0]);
         if (project) await log(client, `Projek “${project.title}” dihapus.`, 'danger', actor);
         return project;
       });
@@ -251,6 +258,16 @@ export function createPostgresRepository(pool) {
           [row.id, { ...updates, updatedAt: now() }]
         )).rows[0]);
         await log(client, `Pengajuan “${submission.title}” diperbarui oleh mahasiswa.`, 'submission', actor);
+        return { submission };
+      });
+    },
+    deletePendingSubmission(id, ownerNim, actor) {
+      return transaction(async client => {
+        const row = (await client.query('select * from showcase.submissions where id=$1 for update', [asId(id)])).rows[0];
+        if (!row || String(row.data.nim) !== String(ownerNim)) return { error: 'not_found' };
+        if (row.data.status !== 'pending') return { error: 'invalid_status' };
+        const submission = unpack((await client.query('delete from showcase.submissions where id=$1 returning *', [row.id])).rows[0]);
+        await log(client, `Pengajuan “${submission.title}” dibatalkan oleh mahasiswa.`, 'submission', actor);
         return { submission };
       });
     },

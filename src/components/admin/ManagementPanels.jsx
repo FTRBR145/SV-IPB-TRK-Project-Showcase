@@ -80,6 +80,8 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
   const [isDeleting, setIsDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [hideTarget, setHideTarget] = useState(null);
+  const [hideReason, setHideReason] = useState('');
 
   const filteredProjects = useMemo(() => {
     if (semesterFilter === 'ALL') return projects;
@@ -125,6 +127,16 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const confirmHideProject = async (event) => {
+    event.preventDefault();
+    if (!hideTarget || !hideReason.trim() || togglingId !== null) return;
+    setTogglingId(hideTarget.id);
+    try {
+      const updated = await onTogglePublication(hideTarget, hideReason.trim());
+      if (updated !== false) { setHideTarget(null); setHideReason(''); }
+    } finally { setTogglingId(null); }
   };
 
   const columns = [
@@ -248,6 +260,11 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
             disabled={togglingId === row.id}
             onClick={async () => {
               if (togglingId !== null) return;
+              if (row.isPublished !== false) {
+                setHideTarget(row);
+                setHideReason('');
+                return;
+              }
               setTogglingId(row.id);
               try { await onTogglePublication(row); } finally { setTogglingId(null); }
             }}
@@ -356,6 +373,23 @@ export function ProjectsPanel({ projects, searchQuery = '', onEdit, onDelete, on
         : `Projek “${deleteTarget?.item?.title || ''}” akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`}
       confirmLabel={deleteTarget?.kind === 'bulk' ? `Hapus ${deleteTarget.count} projek` : 'Hapus projek'}
     />
+    {hideTarget && <ModalShell
+      onClose={() => { if (togglingId === null) setHideTarget(null); }}
+      ariaLabel={`Sembunyikan projek ${hideTarget.title}`}
+      panelClassName="max-w-md rounded-2xl p-6"
+    >
+      <h2 className="pr-10 font-heading text-xl font-bold text-slate-950">Sembunyikan projek?</h2>
+      <p className="mt-2 text-sm text-slate-600">Mahasiswa akan melihat alasan ini dan tidak dapat menayangkan kembali projek sampai admin mengizinkan.</p>
+      <ValidatedForm onSubmit={confirmHideProject} className="mt-5 space-y-4">
+        <label htmlFor="hide-project-reason" className="block text-sm font-semibold text-slate-800">Alasan untuk mahasiswa</label>
+        <textarea id="hide-project-reason" value={hideReason} onChange={(event) => setHideReason(event.target.value)}
+          required maxLength={500} rows={4} className="w-full rounded-xl border border-slate-300 p-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600" />
+        <div className="flex flex-wrap justify-end gap-2">
+          <button type="button" disabled={togglingId !== null} onClick={() => setHideTarget(null)} className="min-h-11 rounded-xl border border-slate-300 px-4 text-sm font-semibold">Batal</button>
+          <button type="submit" disabled={togglingId !== null || !hideReason.trim()} className="min-h-11 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white disabled:opacity-50">{togglingId !== null ? 'Menyimpan...' : 'Sembunyikan projek'}</button>
+        </div>
+      </ValidatedForm>
+    </ModalShell>}
     </>
   );
 }

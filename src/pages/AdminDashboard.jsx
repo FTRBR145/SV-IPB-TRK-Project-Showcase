@@ -110,7 +110,10 @@ export default function AdminDashboard() {
             onEdit={setEditingProject}
             onDelete={deleteProject}
             onDeleteMany={deleteProjects}
-            onTogglePublication={(project) => updateProject(project.id, { isPublished: project.isPublished === false })}
+            onTogglePublication={(project, publicationReason) => updateProject(project.id, {
+              isPublished: project.isPublished === false,
+              ...(publicationReason ? { publicationReason } : {})
+            })}
             onView={setPreviewProject}
           />
         );

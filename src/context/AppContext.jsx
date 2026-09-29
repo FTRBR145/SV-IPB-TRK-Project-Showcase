@@ -283,7 +283,8 @@ export function AppProvider({ children }) {
           ? previous.map((item) => item.id === project.id ? project : item)
           : [project, ...previous]);
       setManagedProjects((previous) => previous.map((item) => item.id === project.id ? project : item));
-      await refreshActivityLogs();
+      setOwnProjects((previous) => previous.map((item) => item.id === project.id ? project : item));
+      if (currentUser?.role === 'admin') await refreshActivityLogs();
       showToast('Perubahan projek berhasil disimpan.');
       return project;
     } catch (error) {
@@ -296,7 +297,8 @@ export function AppProvider({ children }) {
       await apiRequest(`/projects/${projectId}`, { method: 'DELETE' });
       setProjects((previous) => previous.filter((project) => project.id !== projectId));
       setManagedProjects((previous) => previous.filter((project) => project.id !== projectId));
-      await refreshActivityLogs();
+      setOwnProjects((previous) => previous.filter((project) => project.id !== projectId));
+      if (currentUser?.role === 'admin') await refreshActivityLogs();
       showToast('Projek berhasil dihapus.', 'info');
       return true;
     } catch (error) {
@@ -395,6 +397,17 @@ export function AppProvider({ children }) {
       return submission;
     } catch (error) {
       return reportApiError(error, 'Perubahan pengajuan gagal disimpan.');
+    }
+  };
+
+  const deletePendingSubmission = async (submissionId) => {
+    try {
+      await apiRequest(`/submissions/${submissionId}`, { method: 'DELETE' });
+      setSubmissions((previous) => previous.filter((item) => item.id !== submissionId));
+      showToast('Pengajuan berhasil dibatalkan.', 'info');
+      return true;
+    } catch (error) {
+      return reportApiError(error, 'Pengajuan gagal dibatalkan.');
     }
   };
 
@@ -559,6 +572,7 @@ export function AppProvider({ children }) {
       addProject,
       updateProject,
       updateSubmission,
+      deletePendingSubmission,
       deleteProject,
       deleteProjects,
       approveSubmission,

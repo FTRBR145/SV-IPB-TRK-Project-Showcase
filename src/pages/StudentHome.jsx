@@ -12,6 +12,7 @@ import '../student.css';
 import ProjectDetailModal from '../components/modals/ProjectDetailModal';
 import StudentSidebar from '../components/student/StudentSidebar';
 import EditProjectModal from '../components/admin/EditProjectModal';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 import useApp from '../hooks/useApp';
 
 
@@ -36,14 +37,17 @@ export default function StudentHome() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { projects, ownProjects, catalogStatus, submissions, currentUser, isLoggedIn, logout, courses, updateSubmission } = useApp();
+  const { projects, ownProjects, catalogStatus, submissions, currentUser, isLoggedIn, logout, courses,
+    updateProject, deleteProject, updateSubmission, deletePendingSubmission } = useApp();
   const isAdminPreview = isAdminAccount(currentUser);
   const studentUser = isStudentAccount(currentUser) ? currentUser : null;
 
   const selectedSemester = searchParams.get('semester') || 'ALL';
   const searchQuery = searchParams.get('search') || '';
   const [visibleProjectCount, setVisibleProjectCount] = useState(PAGE_SIZE);
-  const [editingSubmission, setEditingSubmission] = useState(null);
+  const [editingProject, setEditingProject] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [togglingId, setTogglingId] = useState(null);
 
   // URL jadi sumber kebenaran tab & kategori, bukan state lokal.
   const activeTab = !isAdminPreview && searchParams.get('tab') === 'my-projects' ? 'my-projects' : 'home';
@@ -122,6 +126,20 @@ export default function StudentHome() {
 
   const handleCloseDetail = () => {
     updateParams(params => params.delete('submission'));
+  };
+
+  const handleTogglePublication = async (project) => {
+    if (togglingId !== null) return;
+    setTogglingId(project.id);
+    try { await updateProject(project.id, { isPublished: project.isPublished === false }); }
+    finally { setTogglingId(null); }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return false;
+    return deleteTarget.isPending
+      ? deletePendingSubmission(deleteTarget.id)
+      : deleteProject(deleteTarget.id);
   };
 
   const showAllProjects = () => {
@@ -215,9 +233,12 @@ export default function StudentHome() {
               <StudentProjectCard
                 key={`${project.status || 'published'}-${project.id}`}
                 project={project}
-                isOwner={belongsToStudent(project, studentUser)}
+                isOwner={Boolean(personal && studentUser?.nim && String(project.nim) === String(studentUser.nim))}
                 onOpen={handleOpenDetail}
-                onEdit={project.isPending ? setEditingSubmission : undefined}
+                onEdit={personal ? setEditingProject : undefined}
+                onTogglePublication={personal ? handleTogglePublication : undefined}
+                onDelete={personal ? setDeleteTarget : undefined}
+                isToggling={togglingId === project.id}
               />
             )}</div>}
             {catalogStatus === 'ready' && remainingProjectCount > 0 && <div className="student-load-more"><button type="button" onClick={() => setVisibleProjectCount(count => count + PAGE_SIZE)}>
@@ -228,17 +249,29 @@ export default function StudentHome() {
         <Footer />
       </div>
       {activeDetailProject && <ProjectDetailModal project={activeDetailProject} onClose={handleCloseDetail} />}
-      {editingSubmission && (
+      {editingProject && (
         <EditProjectModal
-          key={editingSubmission.id}
-          project={editingSubmission}
-          onClose={() => setEditingSubmission(null)}
-          onSave={updateSubmission}
-          title="Edit Pengajuan"
-          description="Perbarui informasi projek sebelum ditinjau admin. Statusnya tetap menunggu persetujuan."
-          submitLabel="Simpan Pengajuan"
+          key={`${editingProject.isPending ? 'submission' : 'project'}-${editingProject.id}`}
+          project={editingProject}
+          onClose={() => setEditingProject(null)}
+          onSave={editingProject.isPending ? updateSubmission : updateProject}
+          title={editingProject.isPending ? 'Edit Pengajuan' : 'Edit Projek'}
+          description={editingProject.isPending
+            ? 'Perbarui informasi projek sebelum ditinjau admin. Statusnya tetap menunggu persetujuan.'
+            : 'Perubahan isi projek langsung tampil. Admin dapat melihat perbandingan perubahannya.'}
+          submitLabel={editingProject.isPending ? 'Simpan Pengajuan' : 'Simpan Perubahan'}
         />
       )}
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title={deleteTarget?.isPending ? 'Batalkan pengajuan?' : 'Hapus projek permanen?'}
+        description={deleteTarget?.isPending
+          ? `Pengajuan “${deleteTarget.title}” akan dihapus dan tidak lagi ditinjau admin.`
+          : `Projek “${deleteTarget?.title || ''}” akan dihapus permanen dari portofolio dan halaman publik. Tindakan ini tidak dapat dibatalkan.`}
+        confirmLabel={deleteTarget?.isPending ? 'Batalkan pengajuan' : 'Hapus projek'}
+      />
     </div>
   );
 }

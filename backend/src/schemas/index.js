@@ -48,7 +48,7 @@ export const projectSchema = z.object({
 
 export const projectUpdateSchema = projectSchema
   .partial()
-  .extend({ isPublished: z.boolean().optional() })
+  .extend({ isPublished: z.boolean().optional(), publicationReason: optionalText(500) })
   .refine((value) => Object.keys(value).length > 0, 'Minimal satu perubahan wajib dikirim.');
 
 export const submissionUpdateSchema = projectSchema
@@ -64,6 +64,17 @@ export const submissionUpdateSchema = projectSchema
     description: true
   })
   .partial()
+  .refine((value) => Object.keys(value).length > 0, 'Minimal satu perubahan wajib dikirim.');
+
+export const studentProjectUpdateSchema = projectSchema
+  .pick({
+    title: true, course: true, category: true, semester: true,
+    techStack: true, videoUrl: true, thumbnail: true,
+    supervisor: true, description: true
+  })
+  .partial()
+  .extend({ isPublished: z.boolean().optional() })
+  .strict()
   .refine((value) => Object.keys(value).length > 0, 'Minimal satu perubahan wajib dikirim.');
 
 export const bulkDeleteSchema = z.object({

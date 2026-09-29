@@ -139,6 +139,14 @@ export function SettingsPanel({ settings, onSave }) {
 
 const activityTypes = { login: 'Login admin', logout: 'Logout admin', project: 'Projek', submission: 'Pengajuan', success: 'Persetujuan', danger: 'Penghapusan / penolakan', taxonomy: 'Mata kuliah', user: 'Akun pengguna', settings: 'Pengaturan', system: 'Sistem', info: 'Informasi' };
 const activityTime = new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Asia/Jakarta' });
+const projectFieldLabels = {
+  title: 'Judul', course: 'Mata kuliah', category: 'Kategori', semester: 'Semester',
+  techStack: 'Teknologi', videoUrl: 'URL video', thumbnail: 'Sampul',
+  supervisor: 'Dosen pembimbing', description: 'Deskripsi', isPublished: 'Status tayang'
+};
+const changeValue = (field, value) => field === 'isPublished'
+  ? (value === false ? 'Tidak tayang' : 'Tayang')
+  : Array.isArray(value) ? value.join(', ') || '—' : String(value ?? '—') || '—';
 
 export function ActivityLogsPanel({ logs, onClear, onRefresh }) {
   const [typeFilter, setTypeFilter] = useState('all');
@@ -165,7 +173,18 @@ export function ActivityLogsPanel({ logs, onClear, onRefresh }) {
             <Activity size={15} />
           </div>
           <div className="text-xs text-slate-800 font-semibold leading-snug break-words min-w-0">
-            {row.message.length > 250 ? <details>
+            {row.changes && Object.keys(row.changes).length ? <details>
+              <summary className="cursor-pointer">{row.message} Lihat perbandingan</summary>
+              <dl className="mt-3 space-y-3 font-normal">
+                {Object.entries(row.changes).map(([field, values]) => <div key={field} className="rounded-lg border border-slate-200 p-3">
+                  <dt className="mb-2 font-semibold text-slate-800">{projectFieldLabels[field] || field}</dt>
+                  <dd className="grid gap-2 sm:grid-cols-2">
+                    <div className="min-w-0 whitespace-pre-wrap break-words"><span className="block text-slate-500">Sebelum</span>{changeValue(field, values.before)}</div>
+                    <div className="min-w-0 whitespace-pre-wrap break-words"><span className="block text-slate-500">Sesudah</span>{changeValue(field, values.after)}</div>
+                  </dd>
+                </div>)}
+              </dl>
+            </details> : row.message.length > 250 ? <details>
               <summary className="cursor-pointer">{row.message.split('. ')[0]}. Lihat rincian</summary>
               <p className="mt-2 font-normal">{row.message}</p>
             </details> : row.message}

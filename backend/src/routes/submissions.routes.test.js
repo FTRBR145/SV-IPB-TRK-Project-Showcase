@@ -85,3 +85,22 @@ test('student cannot edit another student submission or a moderated submission',
 
   assert.equal(moderated.body.error.code, 'INVALID_SUBMISSION_STATUS');
 });
+
+test('student cancels only their own pending submission', async () => {
+  const seed = createSeedData();
+  seed.submissions.unshift(studentSubmission({ id: 102 }));
+  seed.submissions.unshift(studentSubmission({ id: 103, nim: 'OTHER' }));
+  seed.submissions.unshift(studentSubmission({ id: 104, status: 'approved' }));
+  const app = createApp({ repository: createMemoryRepository(seed) });
+  const student = request.agent(app);
+  const admin = request.agent(app);
+  await student.post(env.apiPrefix + '/auth/login').send({ identifier: env.studentEmail, password: env.studentPassword }).expect(200);
+  await admin.post(env.apiPrefix + '/auth/login').send({ identifier: env.adminEmail, password: env.adminPassword }).expect(200);
+  await request(app).delete(env.apiPrefix + '/submissions/102').expect(401);
+  await admin.delete(env.apiPrefix + '/submissions/102').expect(403);
+  await student.delete(env.apiPrefix + '/submissions/103').expect(404);
+  await student.delete(env.apiPrefix + '/submissions/104').expect(409);
+  await student.delete(env.apiPrefix + '/submissions/102').expect(200);
+  await student.delete(env.apiPrefix + '/submissions/102').expect(404);
+  assert.equal((await student.get(env.apiPrefix + '/submissions/mine').expect(200)).body.data.some(item => item.id === 102), false);
+});

@@ -1,4 +1,4 @@
-import { activityActor, studentActivity, settingsActivity } from '../utils/activity.js';
+import { activityActor, studentActivity, settingsActivity, prepareProjectUpdate } from '../utils/activity.js';
 import { ApiError } from '../utils/http.js';
 import { createSeedData } from '../data/seed.js';
 
@@ -17,11 +17,12 @@ function includesText(value, query) {
 export function createMemoryRepository(initialData = createSeedData()) {
   let state = clone(initialData);
 
-  const recordActivity = (message, type = 'info', actor = 'Sistem') => {
+  const recordActivity = (message, type = 'info', actor = 'Sistem', details = {}) => {
     const entry = {
       id: nextId(state.activityLogs),
       type,
       message,
+      ...details,
       ...activityActor(actor),
       timestamp: new Date().toISOString()
     };
@@ -162,18 +163,23 @@ export function createMemoryRepository(initialData = createSeedData()) {
     updateProject(id, updates, actor) {
       const index = state.projects.findIndex((item) => item.id === Number(id));
       if (index < 0) return null;
+      const prepared = prepareProjectUpdate(state.projects[index], updates, actor);
+      if (prepared.error === 'not_found') return null;
+      if (prepared.error) return prepared;
       state.projects[index] = {
         ...state.projects[index],
-        ...clone(updates),
+        ...clone(prepared.updates),
         id: state.projects[index].id,
         updatedAt: new Date().toISOString()
       };
-      recordActivity(`Projek “${state.projects[index].title}” diperbarui.`, 'project', actor);
+      recordActivity(`Projek “${state.projects[index].title}” diperbarui.`, 'project', actor,
+        prepared.changes && Object.keys(prepared.changes).length ? { projectId: state.projects[index].id, changes: prepared.changes } : {});
       return clone(state.projects[index]);
     },
 
     deleteProject(id, actor) {
-      const index = state.projects.findIndex((item) => item.id === Number(id));
+      const index = state.projects.findIndex((item) => item.id === Number(id) &&
+        (actor?.role !== 'student' || (actor.nim && item.nim && String(item.nim) === String(actor.nim))));
       if (index < 0) return null;
       const [removed] = state.projects.splice(index, 1);
       recordActivity(`Projek “${removed.title}” dihapus.`, 'danger', actor);
@@ -231,6 +237,15 @@ export function createMemoryRepository(initialData = createSeedData()) {
       };
       recordActivity(`Pengajuan “${state.submissions[index].title}” diperbarui oleh mahasiswa.`, 'submission', actor);
       return { submission: clone(state.submissions[index]) };
+    },
+
+    deletePendingSubmission(id, ownerNim, actor) {
+      const index = state.submissions.findIndex((item) => item.id === Number(id) && String(item.nim) === String(ownerNim));
+      if (index < 0) return { error: 'not_found' };
+      if (state.submissions[index].status !== 'pending') return { error: 'invalid_status' };
+      const [submission] = state.submissions.splice(index, 1);
+      recordActivity(`Pengajuan “${submission.title}” dibatalkan oleh mahasiswa.`, 'submission', actor);
+      return { submission: clone(submission) };
     },
 
     approveSubmission(id, actor) {

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate, authorize, bestEffortAuthenticate, optionalAuthenticate } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { bulkDeleteSchema, projectSchema, projectUpdateSchema } from '../schemas/index.js';
+import { bulkDeleteSchema, projectSchema, projectUpdateSchema, studentProjectUpdateSchema } from '../schemas/index.js';
 import { ApiError, sendData } from '../utils/http.js';
 
 const router = Router();
@@ -67,13 +67,15 @@ router.post('/bulk-delete', authenticate, authorize('admin'), validate(bulkDelet
   sendData(response, { ids: result.projects.map((project) => project.id), deletedCount: result.projects.length });
 });
 
-router.patch('/:id', authenticate, authorize('admin'), validate(projectUpdateSchema), async (request, response) => {
+router.patch('/:id', authenticate, authorize('admin', 'student'), (request, response, next) =>
+  validate(request.user.role === 'student' ? studentProjectUpdateSchema : projectUpdateSchema)(request, response, next), async (request, response) => {
   const project = await request.app.locals.repository.updateProject(request.params.id, request.body, request.user);
   if (!project) throw new ApiError(404, 'PROJECT_NOT_FOUND', 'Projek tidak ditemukan.');
+  if (project.error === 'publication_locked') throw new ApiError(409, 'PUBLICATION_LOCKED', 'Projek ini disembunyikan admin. Hanya admin yang dapat menayangkannya kembali.');
   sendData(response, project);
 });
 
-router.delete('/:id', authenticate, authorize('admin'), async (request, response) => {
+router.delete('/:id', authenticate, authorize('admin', 'student'), async (request, response) => {
   const project = await request.app.locals.repository.deleteProject(request.params.id, request.user);
   if (!project) throw new ApiError(404, 'PROJECT_NOT_FOUND', 'Projek tidak ditemukan.');
   sendData(response, project);
