@@ -34,6 +34,7 @@ test('server-rendered detail exposes metadata only for public projects', async (
     const publicPage = await request(app).get('/project/2').expect(200);
     assert.match(publicPage.text, /property="og:title"/);
     assert.match(publicPage.text, /rel="canonical"/);
+    assert.match(publicPage.headers['content-security-policy'], /frame-src https:\/\/www\.youtube\.com/);
     assert.deepEqual(calls, [[`${siteOrigin}/index.html`, undefined]]);
 
     const admin = request.agent(app);

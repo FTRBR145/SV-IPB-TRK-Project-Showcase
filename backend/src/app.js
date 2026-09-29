@@ -60,7 +60,11 @@ export function createApp({ repository, loginLimiter = loginRateLimit() } = {}) 
       const body = publicProject
         ? projectHtml(html, project, `${siteOrigin}/project/${request.params.id}`)
         : unavailableProjectHtml(html);
-      return response.status(publicProject ? 200 : 404).type('html').set('Cache-Control', 'no-store').send(body);
+      return response.status(publicProject ? 200 : 404).type('html').set({
+        'Cache-Control': 'no-store',
+        'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data:; connect-src 'self'; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+        'X-Frame-Options': 'DENY'
+      }).send(body);
     } catch (error) {
       return next(error);
     }
