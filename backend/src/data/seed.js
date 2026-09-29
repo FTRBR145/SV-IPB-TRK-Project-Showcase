@@ -113,7 +113,7 @@ export function createSeedData() {
     ],
     settings: {
       siteName: 'Showcase Projek TRK SV IPB',
-      academicYear: '2025/2026',
+      academicYear: '2026/2027',
       moderationRequired: true,
       allowGuestUploads: false,
       maintenanceMode: false
