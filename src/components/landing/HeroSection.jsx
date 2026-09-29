@@ -12,10 +12,11 @@ export default function HeroSection({ onOpenUpload }) {
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const [loadedCount, setLoadedCount] = useState(prefersReducedMotion ? 1 : 2);
+  const [loadedCount, setLoadedCount] = useState(1);
   const [isHeroVisible, setIsHeroVisible] = useState(true);
   const [isDocumentVisible, setIsDocumentVisible] = useState(!document.hidden);
   const heroRef = useRef(null);
+  const loadedSlides = useRef(new Set());
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const updatePreference = () => setPrefersReducedMotion(mediaQuery.matches);
@@ -41,15 +42,24 @@ export default function HeroSection({ onOpenUpload }) {
   }, []);
 
   useEffect(() => {
+    if (prefersReducedMotion) return undefined;
+    const timer = setTimeout(() => setLoadedCount(count => Math.max(count, 2)), 1200);
+    return () => clearTimeout(timer);
+  }, [prefersReducedMotion]);
+
+  useEffect(() => {
     if (prefersReducedMotion || !isHeroVisible || !isDocumentVisible) return undefined;
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % images.length);
+      setCurrentSlide((prev) => {
+        const next = (prev + 1) % images.length;
+        return loadedSlides.current.has(next) ? next : prev;
+      });
     }, 6000);
     return () => clearInterval(timer);
   }, [images.length, isDocumentVisible, isHeroVisible, prefersReducedMotion]);
 
   useEffect(() => {
-    if (!prefersReducedMotion) {
+    if (!prefersReducedMotion && currentSlide > 0) {
       setLoadedCount(count => Math.max(count, Math.min(images.length, currentSlide + 2)));
     }
   }, [currentSlide, images.length, prefersReducedMotion]);
@@ -61,7 +71,8 @@ export default function HeroSection({ onOpenUpload }) {
           <picture key={image.large} className={`hero-slide ${index === currentSlide ? 'is-active' : ''}`}>
             <source media="(max-width: 767px)" srcSet={image.small} type="image/webp" />
             <img src={image.large} alt="" width="1600" height="1067"
-              decoding="async" fetchPriority={index === 0 ? 'high' : 'low'} />
+              decoding="async" fetchPriority={index === 0 ? 'high' : 'low'}
+              onLoad={() => loadedSlides.current.add(index)} />
           </picture>
         ))}
       </div>
