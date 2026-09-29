@@ -1,6 +1,19 @@
 import { z } from 'zod';
 
 const optionalText = (max) => z.string().trim().max(max).optional();
+const youtubeVideoUrl = z.url().refine(value => {
+  const url = new URL(value);
+  if (!['http:', 'https:'].includes(url.protocol)) return false;
+  const parts = url.pathname.split('/').filter(Boolean);
+  const host = url.hostname.toLowerCase();
+  let id = '';
+  if (host === 'youtu.be' && parts.length === 1) id = parts[0];
+  else if (['youtube.com', 'www.youtube.com', 'm.youtube.com'].includes(host)) {
+    if (url.pathname === '/watch') id = url.searchParams.get('v');
+    else if (['embed', 'shorts', 'live'].includes(parts[0]) && parts.length === 2) id = parts[1];
+  }
+  return /^[A-Za-z0-9_-]{11}$/.test(id || '');
+}, 'Masukkan tautan video YouTube yang valid.');
 
 export const profileSchema = z.object({ name: z.string().trim().min(2).max(120) }).strict();
 export const passwordSchema = z.object({
@@ -25,7 +38,7 @@ export const projectSchema = z.object({
   category: optionalText(80),
   semester: z.coerce.number().int().min(1).max(14),
   techStack: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
-  videoUrl: z.url(),
+  videoUrl: youtubeVideoUrl,
   thumbnail: z.url().optional(),
   supervisor: optionalText(160),
   year: optionalText(20),

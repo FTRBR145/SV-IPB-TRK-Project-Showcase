@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { env } from './config/env.js';
 import { errorHandler, notFound } from './middleware/errors.js';
 import { loginRateLimit } from './middleware/rateLimit.js';
+import { ApiError } from './utils/http.js';
 import apiRoutes from './routes/index.js';
 
 export function createApp({ repository, loginLimiter = loginRateLimit() } = {}) {
@@ -24,6 +25,15 @@ export function createApp({ repository, loginLimiter = loginRateLimit() } = {}) 
     },
     credentials: true
   }));
+  app.use((request, response, next) => {
+    if (request.headers.cookie || request.headers.authorization) response.set('Cache-Control', 'no-store');
+    if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) return next();
+    const origin = request.get('origin');
+    if (origin
+      ? origin === `${request.protocol}://${request.get('host')}` || env.frontendOrigins.includes(origin)
+      : !['cross-site', 'same-site'].includes(request.get('sec-fetch-site'))) return next();
+    return next(new ApiError(403, 'INVALID_ORIGIN', 'Asal permintaan tidak diizinkan.'));
+  });
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: false, limit: '1mb' }));
   app.use('/api/auth/login', loginLimiter);
