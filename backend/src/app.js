@@ -6,6 +6,7 @@ import { env } from './config/env.js';
 import { errorHandler, notFound } from './middleware/errors.js';
 import { loginRateLimit } from './middleware/rateLimit.js';
 import { ApiError } from './utils/http.js';
+import { projectHtml, siteOrigin, unavailableProjectHtml } from './utils/projectHtml.js';
 import apiRoutes from './routes/index.js';
 
 export function createApp({ repository, loginLimiter = loginRateLimit() } = {}) {
@@ -47,6 +48,22 @@ export function createApp({ repository, loginLimiter = loginRateLimit() } = {}) 
         health: `${env.apiPrefix}/health`
       }
     });
+  });
+  app.get('/project/:id', async (request, response, next) => {
+    if (!/^\d+$/.test(request.params.id)) return next();
+    try {
+      const project = await repository.findProjectById(request.params.id);
+      const shell = await fetch(`${siteOrigin}/index.html`, { headers: { accept: 'text/html' }, cache: 'no-store' });
+      if (!shell.ok) return response.status(503).send('Halaman belum tersedia.');
+      const html = await shell.text();
+      const publicProject = project && project.isPublished !== false;
+      const body = publicProject
+        ? projectHtml(html, project, `${siteOrigin}/project/${request.params.id}`)
+        : unavailableProjectHtml(html);
+      return response.status(publicProject ? 200 : 404).type('html').set('Cache-Control', 'no-store').send(body);
+    } catch (error) {
+      return next(error);
+    }
   });
   app.use(env.apiPrefix, apiRoutes);
   app.use(notFound);

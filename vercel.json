@@ -30,6 +30,12 @@
   ],
   "rewrites": [
     {
+      "source": "/project/:id",
+      "destination": {
+        "service": "backend"
+      }
+    },
+    {
       "source": "/api(/.*)?",
       "destination": {
         "service": "backend"
